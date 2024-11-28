@@ -1,0 +1,255 @@
+.lot-form {
+    margin: 20px;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 5px;
+}
+
+.lot-form input {
+    margin: 5px;
+    padding: 5px;
+    width: 200px;
+}
+
+.lot-form button {
+    margin: 5px;
+    padding: 5px 15px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.menu {
+    padding: 20px;
+    background: #f0f0f0;
+    margin-bottom: 20px;
+}
+
+.menu button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    cursor: pointer;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 3px;
+}
+
+.section {
+    padding: 20px;
+}
+
+#map, #view-map { 
+    height: 70vh; 
+    width: 100%; 
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.view-button {
+    padding: 5px 10px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#view-map-container {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 5px;
+}
+
+#view-map-container h3 {
+    margin-bottom: 10px;
+}
+
+#view-map {
+    height: 500px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.space-form {
+    margin: 20px;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 5px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.form-group h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#lotSelect {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#spaceID {
+    background-color: #f9f9f9;
+    cursor: not-allowed;
+}
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 0;
+    position: relative;
+    padding-right: 70px;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+#space-map {
+    height: 500px;
+    width: 100%;
+    margin: 20px 0;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    z-index: 1;
+}
+
+.auto-selected {
+    position: relative;
+    padding-left: 5px;
+    border-left: 3px solid #4CAF50;
+}
+
+.auto-selected::after {
+    content: '(suggested)';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8em;
+    color: #4CAF50;
+    font-style: italic;
+}
+
+/* Style for the popup save button */
+.leaflet-popup-content button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.leaflet-popup-content button:hover {
+    background-color: #45a049;
+}
+
+/* Make popups more visible on satellite imagery */
+.leaflet-popup-content {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+}
+
+/* Make controls more visible on satellite imagery */
+.leaflet-control-layers {
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.space-popup {
+    text-align: left;
+    padding: 5px;
+    min-width: 200px;
+}
+
+.save-space-btn {
+    margin-top: 10px;
+    padding: 8px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.save-space-btn:hover {
+    background-color: #45a049;
+}
+
+.leaflet-popup-content {
+    margin: 10px;
+}
+  

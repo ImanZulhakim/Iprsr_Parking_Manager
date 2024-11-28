@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Lot Management</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <div class="menu">
+        <button onclick="showSection('add-lot')">Add New Parking Lot</button>
+        <button onclick="showSection('view-lots')">View Parking Lots</button>
+        <button onclick="showSection('manage-spaces')">Manage Parking Spaces</button>
+    </div>
+
+    <div id="add-lot" class="section">
+        <h2>Add New Parking Lot</h2>
+        <div class="lot-form">
+            <input type="text" id="lotID" placeholder="Lot ID (e.g., SOC_2)" />
+            <input type="text" id="lotName" placeholder="Location Name(e.g., SOC)" />
+            <button onclick="startDrawing()">Draw Boundary</button>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <div id="view-lots" class="section" style="display:none;">
+        <h2>View Parking Lots</h2>
+        <table id="lots-table">
+            <thead>
+                <tr>
+                    <th>Lot ID</th>
+                    <th>Location</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="view-map-container" style="display:none;">
+            <h3>Parking Lot Map View</h3>
+            <div id="view-map"></div>
+        </div>
+    </div>
+
+    <div id="manage-spaces" class="section" style="display:none;">
+        <h2>Manage Parking Spaces</h2>
+        <div class="space-form">
+            <!-- Lot Selection -->
+            <div class="form-group">
+                <h3>1. Select Parking Lot</h3>
+                <select id="lotSelect" class="form-control">
+                    <option value="">Select Parking Lot</option>
+                </select>
+            </div>
+
+            <!-- Space Details -->
+            <div class="form-group">
+                <h3>2. Space Information</h3>
+                <label>Space ID (auto-generated):</label>
+                <input type="text" id="spaceID" readonly />
+                
+                <label>Parking Type:</label>
+                <select id="parkingType" disabled>
+                    <option value="">Select Type</option>
+                    <option value="Special">Special (Disability)</option>
+                    <option value="Female">Female</option>
+                    <option value="Premium">Premium</option>
+                    <option value="EV">EV Charging</option>
+                    <option value="Family">Family</option>
+                    <option value="Regular">Regular</option>
+                </select>
+            </div>
+
+            <!-- Space Attributes -->
+            <div class="form-group">
+                <h3>3. Space Attributes</h3>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="isNearest"> Nearest</label>
+                    <label><input type="checkbox" id="isCovered"> Covered</label>
+                    <label><input type="checkbox" id="isWheelchairAccessible"> Wheelchair Accessible</label>
+                    <label><input type="checkbox" id="hasLargeSpace"> Large Space</label>
+                    <label><input type="checkbox" id="isWellLitArea"> Well Lit Area</label>
+                    <label><input type="checkbox" id="hasEVCharging"> EV Charging</label>
+                    <label><input type="checkbox" id="isFamilyParkingArea"> Family Parking</label>
+                    <label><input type="checkbox" id="isPremium"> Premium</label>
+                </div>
+            </div>
+
+            <button onclick="startSpaceMarking()">Mark Location on Map</button>
+        </div>
+        <div id="space-map"></div>
+        <table id="spaces-table">
+            <thead>
+                <tr>
+                    <th>Space ID</th>
+                    <th>Type</th>
+                    <th>Lot ID</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script src="app.js"></script>
+    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
+</body>
+</html>
