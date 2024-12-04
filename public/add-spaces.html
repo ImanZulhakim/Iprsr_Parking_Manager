@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPRSR Management - Add New Parking Spaces</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <div class="main-content">
+        <h2>Add New Parking Spaces</h2>
+        <div class="table-container">
+            <table id="spaces-table">
+                <thead>
+                    <tr>
+                        <th>Space ID</th>
+                        <th>Type</th>
+                        <th>Nearest</th>
+                        <th>Covered</th>
+                        <th>Wheelchair</th>
+                        <th>Large</th>
+                        <th>Well Lit</th>
+                        <th>EV</th>
+                        <th>Family</th>
+                        <th>Premium</th>
+                        <th>Lot ID</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#navbar-placeholder").load("navbar.html");
+            loadParkingSpaces(); // Load parking spaces when the page is ready
+        });
+    </script>
+</body>
+</html> 

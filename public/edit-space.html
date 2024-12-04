@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IPRSR Management - Edit Parking Space</title>
+    <link rel="stylesheet" href="styles.css" />
+    
+  </head>
+  <body id="edit-space-page"> <!-- Add unique ID to body -->
+
+    <div id="navbar-placeholder"></div>
+
+    <div class="main-content">
+      <h2>Edit Parking Space</h2>
+      <form
+        id="editSpaceForm"
+        onsubmit="editParkingSpace(event)"
+        class="space-form"
+      >
+        <input type="hidden" name="spaceID" />
+        <input type="hidden" name="lotID" />
+
+        <div class="form-row">
+          <label>Space ID:</label>
+          <input type="text" id="displaySpaceID" readonly />
+        </div>
+
+        <div class="form-row">
+          <label>Lot ID:</label>
+          <input type="text" id="displayLotID" readonly />
+        </div>
+
+        <div class="form-row">
+          <label>Parking Type:</label>
+          <select name="parkingType" required>
+            <option value="Special">Special (Disability)</option>
+            <option value="Female">Female</option>
+            <option value="Premium">Premium</option>
+            <option value="EV">EV Charging</option>
+            <option value="Family">Family</option>
+            <option value="Regular">Regular</option>
+          </select>
+        </div>
+
+        <div class="checkbox-group-container">
+          <label for="parkingPreferences" class="checkbox-group-label">Parking Preferences</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" name="isNearest" /> Nearest</label>
+            <label><input type="checkbox" name="isCovered" /> Covered</label>
+            <label><input type="checkbox" name="isWheelchairAccessible" /> Wheelchair Accessible</label>
+            <label><input type="checkbox" name="hasLargeSpace" /> Large Space</label>
+            <label><input type="checkbox" name="isWellLitArea" /> Well Lit Area</label>
+            <label><input type="checkbox" name="hasEVCharging" /> EV Charging</label>
+            <label><input type="checkbox" name="isFamilyParkingArea" /> Family Parking</label>
+            <label><input type="checkbox" name="isPremium" /> Premium</label>
+            <label><input type="checkbox" name="isAvailable" /> Available</label>
+          </div>
+        </div>
+        
+
+        <div class="form-actions">
+          <button type="submit" class="submit-btn">Save Changes</button>
+          <button type="button" onclick="window.location.href='index.html'" class="cancel-btn">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+      $(document).ready(function () {
+        $("#navbar-placeholder").load("navbar.html");
+
+        // Only run this logic on edit-space.html
+        if (window.location.pathname.endsWith("edit-space.html")) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const spaceID = urlParams.get("id");
+
+          if (spaceID) {
+            loadParkingSpaceData(spaceID); // Fetch and display existing data
+          } else {
+            alert("No space ID provided. Unable to load parking space data.");
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

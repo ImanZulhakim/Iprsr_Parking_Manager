@@ -1,255 +1,457 @@
-.lot-form {
-    margin: 20px;
-    padding: 15px;
-    background: #f5f5f5;
-    border-radius: 5px;
+/* Global styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.lot-form input {
-    margin: 5px;
-    padding: 5px;
-    width: 200px;
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
 }
 
-.lot-form button {
-    margin: 5px;
-    padding: 5px 15px;
-    background: #4CAF50;
+/* Navbar styles */
+.navbar {
+    background-color: #0077B6;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
     color: white;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
+    font-size: 1.5rem;
+    font-weight: bold;
 }
 
-.menu {
-    padding: 20px;
-    background: #f0f0f0;
-    margin-bottom: 20px;
+.nav-links {
+    display: flex;
+    gap: 20px;
 }
 
-.menu button {
-    padding: 10px 20px;
-    margin-right: 10px;
-    cursor: pointer;
-    background: #4CAF50;
+.nav-link {
     color: white;
-    border: none;
-    border-radius: 3px;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
 }
 
-.section {
-    padding: 20px;
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
-#map, #view-map { 
-    height: 70vh; 
-    width: 100%; 
-    margin-top: 20px;
+/* Main content styles */
+.main-content {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* Dashboard styles */
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.stats-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin: 20px 0;
+    font-size: 16px;
+    text-align: left;
 }
 
-th, td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
+th,
+td {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
 }
 
 th {
-    background-color: #4CAF50;
+    background-color: #0077B6;
     color: white;
+    font-weight: bold;
+    text-align: center;
 }
 
-.view-button {
-    padding: 5px 10px;
-    background: #2196F3;
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+td {
+    text-align: center;
+    /* Center-align data cells */
+}
+
+.table-container {
+    margin: 20px auto;
+    max-width: 1500px;
+    overflow-x: auto;
+    /* Enables horizontal scroll for the table */
+    white-space: nowrap;
+    /* Prevents table cells from breaking into new lines */
+}
+
+tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Set width for the Location column */
+#spaces-table th:nth-child(13),
+#spaces-table td:nth-child(13) {
+  width: 50px; /* Adjust width as needed */
+  word-wrap: break-word; /* Ensures content wraps if it overflows */
+  text-align: center; /* Optional: Center align content */
+}
+
+
+.pagination-controls {
+    text-align: center;
+    margin: 20px 0;
+    padding: 10px;
+}
+
+.pagination-controls button {
+    margin: 0 3px;
+    padding: 8px 12px;
+    background-color: #0077B6;
     color: white;
     border: none;
-    border-radius: 3px;
+    border-radius: 4px;
     cursor: pointer;
+    transition: background-color 0.2s;
 }
 
+.pagination-controls button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.pagination-controls button.active {
+    background-color: #005f87;
+    font-weight: bold;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: #005f87;
+}
+
+.pagination-ellipsis {
+    margin: 0 5px;
+    color: #666;
+}
+
+/* Map Container Styling */
 #view-map-container {
-    margin-top: 20px;
-    padding: 20px;
-    background: #f5f5f5;
+    margin: 20px auto;
+    max-width: 1200px;
+    height: 400px;
+    border: 1px solid #ddd;
     border-radius: 5px;
 }
 
-#view-map-container h3 {
+h3 {
+    color: #333;
     margin-bottom: 10px;
 }
 
-#view-map {
-    height: 500px;
-    width: 100%;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+
+/* Button styles */
+.action-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 100px;
 }
 
-.space-form {
-    margin: 20px;
-    padding: 20px;
-    background: #f5f5f5;
-    border-radius: 5px;
+.view-btn {
+    background-color: #0077B6;
+    color: white;
+}
+
+.view-btn:hover {
+    background-color: #005F8A;
+    transform: translateY(-1px);
+}
+
+.edit-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.edit-btn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* Error message */
+.error-message {
+    background-color: #fff3f3;
+    color: #dc3545;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    border: 1px solid #ffcdd2;
+}
+
+/* Empty state */
+.empty-table {
+    text-align: center;
+    color: #6c757d;
+    padding: 32px !important;
+    font-style: italic;
+}
+
+/* Form styles */
+.form-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 2rem auto;
 }
 
 .form-group {
-    margin-bottom: 20px;
-    padding: 15px;
-    background: white;
-    border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.form-group h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #333;
-    font-size: 1.1em;
+    margin-bottom: 1.5rem;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
-    color: #666;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
 }
 
 .form-control {
     width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
+    padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
+    font-size: 14px;
 }
 
-#lotSelect {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+/* Label for the checkbox group */
+.checkbox-group-label {
+    display: block;
+    font-weight: bold;
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+    /* Adds space between the label and checkboxes */
 }
 
-#spaceID {
-    background-color: #f9f9f9;
-    cursor: not-allowed;
-}
-
+/* Container for the checkbox group */
 .checkbox-group {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    /* Responsive grid */
+    gap: 1rem;
+    /* Space between checkboxes */
+    margin-top: 1rem;
+    /* Adds space between the label and checkboxes */
 }
 
-.checkbox-group label {
+
+/* Map styles */
+#map,
+#view-map {
+    height: 500px;
+    width: 100%;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+/* Header row */
+.header-row {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 5px;
-    margin-bottom: 0;
-    position: relative;
-    padding-right: 70px;
+    margin-bottom: 20px;
 }
 
-button {
-    background-color: #4CAF50;
+.menu {
+    display: flex;
+    gap: 10px;
+}
+
+/* Form styles */
+.lot-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 2rem auto;
+}
+
+.submit-btn {
+    background-color: #0077B6;
     color: white;
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 1em;
+    font-size: 16px;
+    margin-top: 20px;
 }
 
-button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
+.submit-btn:hover {
+    background-color: #005F8A;
 }
 
-button:hover:not(:disabled) {
-    background-color: #45a049;
-}
-
-#space-map {
-    height: 500px;
-    width: 100%;
-    margin: 20px 0;
-    border: 2px solid #ccc;
-    border-radius: 5px;
-    z-index: 1;
-}
-
-.auto-selected {
-    position: relative;
-    padding-left: 5px;
-    border-left: 3px solid #4CAF50;
-}
-
-.auto-selected::after {
-    content: '(suggested)';
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.8em;
-    color: #4CAF50;
-    font-style: italic;
-}
-
-/* Style for the popup save button */
-.leaflet-popup-content button {
-    margin-top: 10px;
-    padding: 5px 10px;
-    background-color: #4CAF50;
+.cancel-btn {
+    background-color: #a0a4a7;
     color: white;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    width: 100%;
-}
-
-.leaflet-popup-content button:hover {
-    background-color: #45a049;
-}
-
-/* Make popups more visible on satellite imagery */
-.leaflet-popup-content {
-    background: rgba(255, 255, 255, 0.9);
-    padding: 10px;
-}
-
-/* Make controls more visible on satellite imagery */
-.leaflet-control-layers {
-    background: rgba(255, 255, 255, 0.9) !important;
-}
-
-.space-popup {
-    text-align: left;
-    padding: 5px;
-    min-width: 200px;
-}
-
-.save-space-btn {
-    margin-top: 10px;
-    padding: 8px 15px;
-    background-color: #4CAF50;
-    color: white;
+    padding: 10px 20px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 16px;
+    margin-top: 20px;
+}
+
+.cancel-btn:hover {
+    background-color: #cacaca;
+}
+
+/* Styles specifically for edit-space.html */
+#edit-space-page {
+    background-color: #f9fbfc;
+    /* Light background to distinguish the edit page */
+}
+
+#edit-space-page .main-content {
+    max-width: 1000px;
+    /* Adjust width */
+    padding: 20px 30px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#edit-space-page h2 {
+    color: #0077B6;
+    /* Use the theme color */
+    font-size: 2rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+/* Form Row Styling */
+#edit-space-page .form-row {
+    margin-bottom: 1.2rem;
+}
+
+#edit-space-page .form-row label {
+    font-size: 1rem;
+    color: #555;
+    font-weight: 500;
+}
+
+#edit-space-page .form-row input,
+#edit-space-page .form-row select {
     width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
 }
 
-.save-space-btn:hover {
-    background-color: #45a049;
+#edit-space-page .form-row input[readonly] {
+    background-color: #f3f3f3;
+    cursor: not-allowed;
 }
 
-.leaflet-popup-content {
-    margin: 10px;
+#edit-space-page .checkbox-group {
+    margin-top: 1rem;
 }
-  
+
+#edit-space-page .checkbox-group label {
+    font-size: 1rem;
+    color: #333;
+}
+
+/* Action buttons */
+#edit-space-page .form-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+#edit-space-page .submit-btn,
+#edit-space-page .cancel-btn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 150px;
+}
+
+#edit-space-page .submit-btn {
+    background-color: #0077B6;
+    color: white;
+}
+
+#edit-space-page .submit-btn:hover {
+    background-color: #005F8A;
+}
+
+#edit-space-page .cancel-btn {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+#edit-space-page .cancel-btn:hover {
+    background-color: #e0e0e0;
+}
+
+#edit-space-page .form-actions button:hover {
+    transform: translateY(-1px);
+}
+
+.custom-marker {
+  position: relative;
+}
+
+.custom-marker div {
+  transition: transform 0.2s ease-out;
+}
+
+.custom-marker:hover div {
+  transform: scale(1.1);
+}
