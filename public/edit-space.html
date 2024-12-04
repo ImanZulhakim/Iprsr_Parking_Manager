@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IPRSR Management - Edit Parking Space</title>
     <link rel="stylesheet" href="styles.css" />
-    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   </head>
   <body id="edit-space-page"> <!-- Add unique ID to body -->
 
@@ -58,6 +58,11 @@
           </div>
         </div>
         
+        <div class="map-container">
+          <label>Space Location:</label>
+          <div id="edit-space-map" style="height: 400px; margin: 10px 0;"></div>
+          <input type="hidden" name="coordinates" id="coordinates">
+        </div>
 
         <div class="form-actions">
           <button type="submit" class="submit-btn">Save Changes</button>
@@ -87,5 +92,6 @@
         }
       });
     </script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   </body>
 </html>

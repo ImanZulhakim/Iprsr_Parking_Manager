@@ -13,7 +13,7 @@ $(document).ready(function () {
       viewLotsElement.style.display = "block";
       const sectionTitle = document.getElementById("section-title");
       if (sectionTitle) sectionTitle.textContent = "Home";
-      
+
       // Load parking lots on page load
       loadParkingLots();
     }
@@ -194,7 +194,8 @@ function viewLot(lotID) {
       createPaginationControls();
 
       // Show containers
-      document.querySelector("#parking-spaces-container").style.display = "block";
+      document.querySelector("#parking-spaces-container").style.display =
+        "block";
       const mapContainer = document.querySelector("#view-map-container");
       mapContainer.style.display = "block";
 
@@ -233,29 +234,31 @@ function viewLot(lotID) {
               // Check if space has coordinates stored as a string "lat,lng"
               if (space.coordinates) {
                 try {
-                  const [lat, lng] = space.coordinates.split(',').map(coord => parseFloat(coord.trim()));
+                  const [lat, lng] = space.coordinates
+                    .split(",")
+                    .map((coord) => parseFloat(coord.trim()));
 
                   if (!isNaN(lat) && !isNaN(lng)) {
                     // Determine marker color based on space type and availability
-                    let markerColor = '#9E9E9E'; // Default gray for regular spaces
-                    
+                    let markerColor = "#9E9E9E"; // Default gray for regular spaces
+
                     if (!space.isAvailable) {
-                      markerColor = '#FF5252'; // redAccent for occupied
+                      markerColor = "#FF5252"; // redAccent for occupied
                     } else if (space.isNearest) {
-                      markerColor = '#69F0AE'; // greenAccent for recommended
+                      markerColor = "#69F0AE"; // greenAccent for recommended
                     } else if (space.isWheelchairAccessible) {
-                      markerColor = '#2196F3'; // blueAccent for special
+                      markerColor = "#2196F3"; // blueAccent for special
                     } else if (space.isFamilyParkingArea) {
-                      markerColor = '#E040FB'; // purpleAccent for family
+                      markerColor = "#E040FB"; // purpleAccent for family
                     } else if (space.hasEVCharging) {
-                      markerColor = '#1DE9B6'; // tealAccent for EV
+                      markerColor = "#1DE9B6"; // tealAccent for EV
                     } else if (space.isPremium) {
-                      markerColor = '#FFD54F'; // yellow/gold for premium
+                      markerColor = "#FFD54F"; // yellow/gold for premium
                     }
 
                     // Create custom marker icon with Google Maps style
                     const markerIcon = L.divIcon({
-                      className: 'custom-marker',
+                      className: "custom-marker",
                       html: `
                         <div style="
                           background-color: ${markerColor};
@@ -280,33 +283,49 @@ function viewLot(lotID) {
                       `,
                       iconSize: [24, 24],
                       iconAnchor: [12, 24],
-                      popupAnchor: [0, -24]
+                      popupAnchor: [0, -24],
                     });
 
-                    const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(currentMap);
-                    
+                    const marker = L.marker([lat, lng], {
+                      icon: markerIcon,
+                    }).addTo(currentMap);
+
                     // Create popup content
                     const popupContent = `
                       <div class="space-popup">
                         <b>Space ID:</b> ${space.parkingSpaceID}<br>
                         <b>Type:</b> ${space.parkingType}<br>
-                        <b>Available:</b> ${space.isAvailable ? "Yes" : "No"}<br>
+                        <b>Available:</b> ${
+                          space.isAvailable ? "Yes" : "No"
+                        }<br>
                         <b>Features:</b><br>
                         ${space.isNearest ? "• Nearest<br>" : ""}
                         ${space.isCovered ? "• Covered<br>" : ""}
-                        ${space.isWheelchairAccessible ? "• Wheelchair Accessible<br>" : ""}
+                        ${
+                          space.isWheelchairAccessible
+                            ? "• Wheelchair Accessible<br>"
+                            : ""
+                        }
                         ${space.hasLargeSpace ? "• Large Space<br>" : ""}
                         ${space.isWellLitArea ? "• Well Lit<br>" : ""}
                         ${space.hasEVCharging ? "• EV Charging<br>" : ""}
-                        ${space.isFamilyParkingArea ? "• Family Parking<br>" : ""}
+                        ${
+                          space.isFamilyParkingArea
+                            ? "• Family Parking<br>"
+                            : ""
+                        }
                         ${space.isPremium ? "• Premium<br>" : ""}
                       </div>
                     `;
-                    
+
                     marker.bindPopup(popupContent);
                   }
                 } catch (error) {
-                  console.error("Error creating marker for space:", space.parkingSpaceID, error);
+                  console.error(
+                    "Error creating marker for space:",
+                    space.parkingSpaceID,
+                    error
+                  );
                 }
               }
             });
@@ -492,6 +511,7 @@ function editParkingSpace(event) {
     isPremium: formData.get("isPremium") === "on" ? 1 : 0,
     isAvailable: formData.get("isAvailable") === "on" ? 1 : 0,
     lotID: formData.get("lotID"),
+    coordinates: formData.get("coordinates"),
   };
 
   // Send PUT request to update the parking space
@@ -517,6 +537,74 @@ function editParkingSpace(event) {
       console.error("Error updating parking space:", error);
       alert("Error updating parking space: " + error.message);
     });
+}
+
+let editSpaceMap = null;
+let editSpaceMarker = null;
+
+function initializeEditSpaceMap(coordinates) {
+  if (editSpaceMap) {
+    editSpaceMap.off();
+    editSpaceMap.remove();
+  }
+
+  // Initialize map
+  editSpaceMap = L.map("edit-space-map").setView([4.2105, 108.9758], 6);
+
+  // Add satellite layer
+  const satelliteTile = L.tileLayer(
+    "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    {
+      subdomains: ["mt0", "mt1", "mt2", "mt3"],
+      maxZoom: 22,
+    }
+  );
+  satelliteTile.addTo(editSpaceMap);
+
+  // If coordinates exist, add marker and center map
+  if (coordinates) {
+    const [lat, lng] = coordinates
+      .split(",")
+      .map((coord) => parseFloat(coord.trim()));
+    if (!isNaN(lat) && !isNaN(lng)) {
+      editSpaceMap.setView([lat, lng], 19);
+      editSpaceMarker = L.marker([lat, lng], { draggable: true }).addTo(
+        editSpaceMap
+      );
+
+      // Update coordinates when marker is dragged
+      editSpaceMarker.on("dragend", function (e) {
+        const position = e.target.getLatLng();
+        document.getElementById(
+          "coordinates"
+        ).value = `${position.lat},${position.lng}`;
+      });
+    }
+  }
+
+  // Add click handler to update marker position
+  editSpaceMap.on("click", function (e) {
+    const position = e.latlng;
+
+    if (editSpaceMarker) {
+      editSpaceMap.removeLayer(editSpaceMarker);
+    }
+
+    editSpaceMarker = L.marker(position, { draggable: true }).addTo(
+      editSpaceMap
+    );
+    document.getElementById(
+      "coordinates"
+    ).value = `${position.lat},${position.lng}`;
+
+    // Update coordinates when marker is dragged
+    editSpaceMarker.on("dragend", function (e) {
+      const newPos = e.target.getLatLng();
+      document.getElementById(
+        "coordinates"
+      ).value = `${newPos.lat},${newPos.lng}`;
+    });
+  });
 }
 
 // Add this function to load parking space data
@@ -557,6 +645,13 @@ function loadParkingSpaceData(spaceID) {
         space.isPremium === 1;
       document.querySelector('input[name="isAvailable"]').checked =
         space.isAvailable === 1;
+
+      if (space.coordinates) {
+        document.getElementById("coordinates").value = space.coordinates;
+        initializeEditSpaceMap(space.coordinates);
+      } else {
+        initializeEditSpaceMap(null);
+      }
     })
     .catch((error) => {
       console.error("Error loading parking space data:", error);

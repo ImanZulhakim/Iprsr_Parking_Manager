@@ -23,7 +23,17 @@
       <!-- View Lots Section -->
       <div id="view-lots" class="section" style="display: none">
         <div class="table-container">
-          <h3>Parking Lots</h3>
+          <div class="table-header">
+            <div class="header-content">
+              <h3>Parking Lots</h3>
+              <button
+                onclick="window.location.href='add-lot.html'"
+                class="add-btn"
+              >
+                Add New Lot
+              </button>
+            </div>
+          </div>
           <table id="lots-table">
             <thead>
               <tr>
@@ -47,7 +57,17 @@
       class="table-container"
       style="display: none"
     >
-      <h3>Parking Spaces</h3>
+      <div class="table-header">
+        <div class="header-content">
+          <h3>Parking Spaces</h3>
+          <button
+            onclick="window.location.href='add-spaces.html'"
+            class="add-btn"
+          >
+            Add New Space
+          </button>
+        </div>
+      </div>
       <table id="spaces-table">
         <thead>
           <tr>

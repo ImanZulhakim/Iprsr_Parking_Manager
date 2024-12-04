@@ -217,6 +217,22 @@ h3 {
     transform: translateY(-1px);
 }
 
+.add-btn {
+    background-color: #0077B6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+    margin-left: auto;
+}
+
+.add-btn:hover {
+    background-color: #005F8A;
+}
+
 /* Error message */
 .error-message {
     background-color: #fff3f3;
@@ -454,4 +470,19 @@ h3 {
 
 .custom-marker:hover div {
   transform: scale(1.1);
+}
+
+.table-header {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.table-header h3 {
+    margin: 0;
 }
