@@ -4,18 +4,18 @@ const mysql = require("mysql2");
 
 // MySQL connection
 const db = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "iprsr",
-  });
-  
-  db.connect((err) => {
-    if (err) {
-      console.error("Error connecting to the database:", err);
-      process.exit();
-    }
-    console.log("Connected to MySQL database!");
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "iprsr",
+});
+
+db.connect((err) => {
+  if (err) {
+    console.error("Error connecting to the database:", err);
+    process.exit();
+  }
+  console.log("Connected to MySQL database!");
 });
 
 const path = require("path");
@@ -54,10 +54,9 @@ app.post("/edit-parking-space", (req, res) => {
   res.json({
     message: "Parking space updated successfully",
     redirectUrl: `/index.html?lotID=${updatedSpace.lotID}`, // Pass the redirect URL
-  });a
+  });
+  a;
 });
-
-
 
 // API to fetch parking lot boundaries
 app.get("/get-lots", (req, res) => {
@@ -89,37 +88,55 @@ app.get("/get-lots", (req, res) => {
 
 // API to save parking lot boundary (polygon)
 app.post("/save-lot", (req, res) => {
-  const { lotID, coordinates } = req.body;
+  const { lotID, coordinates, centerCoordinates } = req.body;
 
-  // Delete existing coordinates for this lotID (if any)
-  const deleteQuery = "DELETE FROM parking_lot_boundaries WHERE lotID = ?"
-  db.query(deleteQuery, [lotID], (err) => {
+  // Start a transaction
+  db.beginTransaction((err) => {
     if (err) {
-      console.error("Error deleting existing lot:", err);
-      res.status(500).send("Error deleting existing lot");
-      return;
+      return res.status(500).send("Transaction error");
     }
 
-    // Insert new coordinates
-    const insertQuery = `
-            INSERT INTO parking_lot_boundaries (lotID, point_order, latitude, longitude)
-            VALUES ?
-        `;
-    const values = coordinates.map((coord, index) => [
-      lotID,
-      index + 1, // point_order
-      coord[0], // latitude is first in the array now
-      coord[1], // longitude is second
-    ]);
+    // Update parkinglot table with center coordinates
+    const updateLotQuery =
+      "UPDATE parkinglot SET coordinates = POINT(?, ?) WHERE lotID = ?";
+    db.query(
+      updateLotQuery,
+      [centerCoordinates[0], centerCoordinates[1], lotID],
+      (err) => {
+        if (err) {
+          return db.rollback(() => {
+            res.status(500).send("Error updating lot coordinates");
+          });
+        }
 
-    db.query(insertQuery, [values], (err) => {
-      if (err) {
-        console.error("Error saving lot coordinates:", err);
-        res.status(500).send("Error saving lot coordinates");
-        return;
+        // Insert boundary coordinates
+        const insertBoundaryQuery =
+          "INSERT INTO parking_lot_boundaries (lotID, point_order, latitude, longitude) VALUES ?";
+        const values = coordinates.map((coord, index) => [
+          lotID,
+          index + 1,
+          coord[0],
+          coord[1],
+        ]);
+
+        db.query(insertBoundaryQuery, [values], (err) => {
+          if (err) {
+            return db.rollback(() => {
+              res.status(500).send("Error saving boundary coordinates");
+            });
+          }
+
+          db.commit((err) => {
+            if (err) {
+              return db.rollback(() => {
+                res.status(500).send("Error committing transaction");
+              });
+            }
+            res.status(200).send("Parking lot saved successfully!");
+          });
+        });
       }
-      res.status(200).send("Parking lot saved successfully!");
-    });
+    );
   });
 });
 
@@ -142,6 +159,61 @@ app.post("/create-lot", (req, res) => {
   });
 });
 
+// Delete parking lot and its boundaries
+app.delete("/delete-lot/:lotID", (req, res) => {
+  const lotID = req.params.lotID;
+
+  // Start a transaction
+  db.beginTransaction((err) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Transaction error",
+        error: err.message,
+      });
+    }
+
+    // First delete from parking_lot_boundaries
+    const deleteBoundariesQuery =
+      "DELETE FROM parking_lot_boundaries WHERE lotID = ?";
+    db.query(deleteBoundariesQuery, [lotID], (err) => {
+      if (err) {
+        return db.rollback(() => {
+          res.status(500).json({
+            message: "Error deleting boundaries",
+            error: err.message,
+          });
+        });
+      }
+
+      // Then delete from parkinglot
+      const deleteLotQuery = "DELETE FROM parkinglot WHERE lotID = ?";
+      db.query(deleteLotQuery, [lotID], (err) => {
+        if (err) {
+          return db.rollback(() => {
+            res.status(500).json({
+              message: "Error deleting parking lot",
+              error: err.message,
+            });
+          });
+        }
+
+        // Commit the transaction
+        db.commit((err) => {
+          if (err) {
+            return db.rollback(() => {
+              res.status(500).json({
+                message: "Error committing transaction",
+                error: err.message,
+              });
+            });
+          }
+          res.json({ message: `Parking lot ${lotID} deleted successfully` });
+        });
+      });
+    });
+  });
+});
+
 // Get all parking lots
 app.get("/get-all-lots", (req, res) => {
   const query = "SELECT lotID, location FROM parkinglot";
@@ -155,7 +227,6 @@ app.get("/get-all-lots", (req, res) => {
     res.json(results);
   });
 });
-
 
 // Get specific lot boundary
 app.get("/get-lot-boundary/:lotID", (req, res) => {

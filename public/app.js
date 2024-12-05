@@ -27,10 +27,26 @@ function initMap(containerId) {
   }
 
   currentMap = L.map(containerId).setView([4.2105, 108.9758], 6);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "© OpenStreetMap contributors",
+  
+  // Add satellite layer from Google
+  const satelliteTile = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    maxZoom: 22,
+    attribution: '© Google'
   }).addTo(currentMap);
+
+  // Add OpenStreetMap as alternative layer
+  const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 22,
+    attribution: '© OpenStreetMap contributors'
+  });
+
+  // Add layer control
+  const baseMaps = {
+    "Satellite": satelliteTile,
+    "Streets": streets
+  };
+  L.control.layers(baseMaps).addTo(currentMap);
 
   drawnItems = new L.FeatureGroup();
   currentMap.addLayer(drawnItems);
@@ -38,35 +54,109 @@ function initMap(containerId) {
   return currentMap;
 }
 
-// Start drawing parking lot boundaries
+
 function startDrawing() {
-  const lotID = document.getElementById("lotID").value;
-  const location = document.getElementById("lotName").value;
+  const lotID = document.getElementById('lotID').value;
+  const location = document.getElementById('lotName').value;
 
   if (!lotID || !location) {
-    alert("Please enter both Lot ID and Location Name first!");
-    return;
+      alert('Please enter both Lot ID and Location Name first!');
+      return;
   }
 
-  fetch(`/check-lot/${lotID}`)
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.exists) {
-        const proceed = data.hasBoundaries
-          ? confirm(
-              "This parking lot already has boundaries. Do you want to update them?"
-            )
-          : true;
-
-        if (proceed) initializeDrawingMap(lotID);
-      } else {
-        createNewLot(lotID, location);
+  // Create the lot first
+  fetch('/create-lot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lotID, location })
+  })
+  .then(response => response.json())
+  .then(data => {
+      if (data.message) {
+          // Initialize drawing after lot is created
+          initializeDrawingMap(lotID);
       }
-    })
-    .catch((err) => {
-      console.error("Error checking lot:", err);
-      alert("Error checking lot status. Please try again.");
-    });
+  })
+  .catch(err => {
+      console.error('Error creating parking lot:', err);
+      alert('Error creating parking lot. Please try again.');
+  });
+}
+
+function initializeDrawingMap(lotID) {
+  if (currentMap) {
+      currentMap.off();
+      currentMap.remove();
+  }
+
+  currentMap = L.map('map').setView([6.4634, 100.5055], 17);
+  
+  // Add satellite layer from Google
+  const satelliteTile = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 22,
+      attribution: '© Google'
+  }).addTo(currentMap);
+
+  // Add OpenStreetMap as alternative layer
+  const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 22,
+      attribution: '© OpenStreetMap contributors'
+  });
+
+  // Add layer control
+  const baseMaps = {
+      "Satellite": satelliteTile,
+      "Streets": streets
+  };
+  L.control.layers(baseMaps).addTo(currentMap);
+
+  drawnItems = new L.FeatureGroup();
+  currentMap.addLayer(drawnItems);
+
+  const drawControl = new L.Control.Draw({
+      draw: {
+          polygon: true,
+          polyline: false,
+          circle: false,
+          rectangle: false,
+          circlemarker: false,
+          marker: false
+      },
+      edit: {
+          featureGroup: drawnItems
+      }
+  });
+  currentMap.addControl(drawControl);
+
+  currentMap.on(L.Draw.Event.CREATED, function(event) {
+      const layer = event.layer;
+      const coordinates = layer.getLatLngs()[0].map(coord => [coord.lat, coord.lng]);
+      
+      // Calculate center point for parkinglot coordinates
+      const centerLat = coordinates.reduce((sum, coord) => sum + coord[0], 0) / coordinates.length;
+      const centerLng = coordinates.reduce((sum, coord) => sum + coord[1], 0) / coordinates.length;
+
+      // Save both boundary and center coordinates
+      fetch('/save-lot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              lotID,
+              coordinates,
+              centerCoordinates: [centerLat, centerLng]
+          })
+      })
+      .then(() => {
+          alert('Parking lot boundary saved successfully!');
+          drawnItems.addLayer(layer);
+          window.location.href = 'index.html';
+      })
+      .catch(err => {
+          console.error('Error saving boundary:', err);
+          alert('Error saving boundary. Please try again.');
+      });
+  });
 }
 
 // Create a new parking lot
@@ -86,47 +176,28 @@ function createNewLot(lotID, location) {
     });
 }
 
-// Initialize map for drawing parking lot boundaries
-function initializeDrawingMap(lotID) {
-  if (currentMap) {
-    currentMap.off();
-    currentMap.remove();
+// Delete a parking lot
+function deleteParkingLot(lotID) {
+  if (!confirm(`Are you sure you want to delete parking lot ${lotID}? This will also delete all associated boundaries.`)) {
+      return;
   }
 
-  currentMap = L.map("map").setView([6.4634, 100.5055], 17);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "© OpenStreetMap contributors",
-  }).addTo(currentMap);
-
-  drawnItems = new L.FeatureGroup();
-  currentMap.addLayer(drawnItems);
-
-  const drawControl = new L.Control.Draw({
-    draw: { polygon: true },
-    edit: { featureGroup: drawnItems },
-  });
-  currentMap.addControl(drawControl);
-
-  currentMap.on(L.Draw.Event.CREATED, function (event) {
-    const layer = event.layer;
-    const coordinates = layer
-      .getLatLngs()[0]
-      .map((coord) => [coord.lat, coord.lng]);
-
-    fetch("/save-lot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lotID, coordinates }),
-    })
-      .then(() => {
-        alert("Parking lot boundary saved successfully!");
-        drawnItems.addLayer(layer);
-      })
-      .catch((err) => {
-        console.error("Error saving boundary:", err);
-        alert("Error saving boundary. Please try again.");
-      });
+  fetch(`/delete-lot/${lotID}`, {
+      method: 'DELETE'
+  })
+  .then(response => {
+      if (!response.ok) {
+          throw new Error('Network response was not ok');
+      }
+      return response.json();
+  })
+  .then(data => {
+      alert(data.message);
+      loadParkingLots(); // Refresh the table
+  })
+  .catch(error => {
+      console.error('Error:', error);
+      alert('Error deleting parking lot. Please try again.');
   });
 }
 
@@ -148,19 +219,20 @@ function loadParkingLots() {
         return;
       }
       lotsTableBody.innerHTML = lots.length
-        ? lots
-            .map(
-              (lot) => `
-            <tr>
-              <td>${lot.lotID}</td>
-              <td>${lot.location}</td>
-              <td>
-                <button class="action-btn view-btn" onclick="viewLot('${lot.lotID}')">View Spaces</button>
-              </td>
-            </tr>`
-            )
-            .join("")
-        : '<tr><td colspan="3">No parking lots available</td></tr>';
+  ? lots
+      .map(
+        (lot) => `
+      <tr>
+        <td>${lot.lotID}</td>
+        <td>${lot.location}</td>
+        <td>
+          <button class="action-btn view-btn" onclick="viewLot('${lot.lotID}')"><i class="fas fa-eye"></i> View Spaces</button>
+          <button class="action-btn delete-btn" onclick="deleteParkingLot('${lot.lotID}')"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`
+      )
+      .join("")
+  : '<tr><td colspan="3">No parking lots available</td></tr>';
     })
     .catch((err) => {
       console.error("Error loading parking lots:", err);
@@ -350,6 +422,16 @@ function displayTableRows() {
     return;
   }
 
+  if (!tableData || tableData.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="14" style="text-align: center; padding: 20px;">
+          No parking spaces available
+        </td>
+      </tr>`;
+    return;
+  }
+
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, tableData.length);
   const paginatedSpaces = tableData.slice(startIndex, endIndex);
@@ -374,10 +456,10 @@ function displayTableRows() {
       <td>
         <button class="action-btn edit-btn" onclick="navigateToEdit('${
           space.parkingSpaceID
-        }')">Edit</button>
+        }')"><i class="fas fa-edit"></i> Edit</button>
         <button class="action-btn delete-btn" onclick="deleteParkingSpace('${
           space.parkingSpaceID
-        }')">Delete</button>
+        }')"><i class="fas fa-trash"></i></button>
       </td>
     `;
     tableBody.appendChild(tr);

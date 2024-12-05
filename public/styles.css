@@ -184,7 +184,7 @@ h3 {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-width: 100px;
+    min-width: 40px;  /* Reduced for icon-only buttons */
 }
 
 .view-btn {
@@ -198,18 +198,20 @@ h3 {
 }
 
 .edit-btn {
-    background-color: #28a745;
-    color: white;
+    background-color: #FFC107;
+    color: #000000;
 }
 
 .edit-btn:hover {
-    background-color: #218838;
+    background-color: #FFB300;
     transform: translateY(-1px);
 }
 
 .delete-btn {
     background-color: #dc3545;
     color: white;
+    padding: 8px;  /* Smaller padding for icon-only */
+    min-width: 36px;
 }
 
 .delete-btn:hover {
@@ -218,7 +220,7 @@ h3 {
 }
 
 .add-btn {
-    background-color: #0077B6;
+    background-color: #28a745;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -227,10 +229,17 @@ h3 {
     font-size: 14px;
     transition: background-color 0.3s;
     margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .add-btn:hover {
-    background-color: #005F8A;
+    background-color: #218838;
+}
+
+.add-btn i {
+    font-size: 14px;
 }
 
 /* Error message */
