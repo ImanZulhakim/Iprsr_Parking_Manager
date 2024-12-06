@@ -9,7 +9,10 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
     />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
   </head>
   <body>
     <!-- Navigation Bar -->
@@ -27,7 +30,10 @@
           <div class="table-header">
             <div class="header-content">
               <h3>Parking Lots</h3>
-              <button onclick="window.location.href='add-lot.html'" class="add-btn">
+              <button
+                onclick="window.location.href='add-lot.html'"
+                class="add-btn"
+              >
                 <i class="fas fa-plus"></i> Add New Lot
               </button>
             </div>
@@ -57,10 +63,11 @@
     >
       <div class="table-header">
         <div class="header-content">
-          <h3>Parking Spaces</h3>
+          <h3>Parking Spaces - <span id="current-lot-location"></span></h3>
           <button
-            onclick="window.location.href='add-spaces.html'"
-            class="add-btn">
+            onclick="window.location.href='add-spaces.html?lotID=' + encodeURIComponent(currentLotID)"
+            class="add-btn"
+          >
             <i class="fas fa-plus"></i> Add New Space
           </button>
         </div>

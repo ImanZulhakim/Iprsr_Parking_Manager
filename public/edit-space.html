@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IPRSR Management - Edit Parking Space</title>
     <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   </head>
-  <body id="edit-space-page"> <!-- Add unique ID to body -->
-
+  <body id="edit-space-page">
     <div id="navbar-placeholder"></div>
 
     <div class="main-content">
@@ -44,29 +44,50 @@
         </div>
 
         <div class="checkbox-group-container">
-          <label for="parkingPreferences" class="checkbox-group-label">Parking Preferences</label>
+          <label for="parkingPreferences" class="checkbox-group-label"
+            >Parking Preferences</label
+          >
           <div class="checkbox-group">
             <label><input type="checkbox" name="isNearest" /> Nearest</label>
             <label><input type="checkbox" name="isCovered" /> Covered</label>
-            <label><input type="checkbox" name="isWheelchairAccessible" /> Wheelchair Accessible</label>
-            <label><input type="checkbox" name="hasLargeSpace" /> Large Space</label>
-            <label><input type="checkbox" name="isWellLitArea" /> Well Lit Area</label>
-            <label><input type="checkbox" name="hasEVCharging" /> EV Charging</label>
-            <label><input type="checkbox" name="isFamilyParkingArea" /> Family Parking</label>
+            <label
+              ><input type="checkbox" name="isWheelchairAccessible" />
+              Wheelchair Accessible</label
+            >
+            <label
+              ><input type="checkbox" name="hasLargeSpace" /> Large Space</label
+            >
+            <label
+              ><input type="checkbox" name="isWellLitArea" /> Well Lit
+              Area</label
+            >
+            <label
+              ><input type="checkbox" name="hasEVCharging" /> EV Charging</label
+            >
+            <label
+              ><input type="checkbox" name="isFamilyParkingArea" /> Family
+              Parking</label
+            >
             <label><input type="checkbox" name="isPremium" /> Premium</label>
-            <label><input type="checkbox" name="isAvailable" /> Available</label>
+            <label
+              ><input type="checkbox" name="isAvailable" /> Available</label
+            >
           </div>
         </div>
-        
-        <div class="map-container">
+
+        <div class="form-row">
           <label>Space Location:</label>
-          <div id="edit-space-map" style="height: 400px; margin: 10px 0;"></div>
-          <input type="hidden" name="coordinates" id="coordinates">
+          <div id="edit-space-map" style="height: 400px; width: 100%"></div>
+          <input type="hidden" id="coordinates" name="coordinates" />
         </div>
 
         <div class="form-actions">
           <button type="submit" class="submit-btn">Save Changes</button>
-          <button type="button" onclick="window.location.href='index.html'" class="cancel-btn">
+          <button
+            type="button"
+            onclick="window.location.href='index.html'"
+            class="cancel-btn"
+          >
             Cancel
           </button>
         </div>
@@ -74,24 +95,24 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
     <script>
       $(document).ready(function () {
         $("#navbar-placeholder").load("navbar.html");
 
-        // Only run this logic on edit-space.html
         if (window.location.pathname.endsWith("edit-space.html")) {
           const urlParams = new URLSearchParams(window.location.search);
           const spaceID = urlParams.get("id");
 
           if (spaceID) {
-            loadParkingSpaceData(spaceID); // Fetch and display existing data
+            // Then load parking space data which will initialize the map
+            loadParkingSpaceData(spaceID);
           } else {
-            alert("No space ID provided. Unable to load parking space data.");
+            alert("Missing space ID. Unable to load parking space data.");
           }
         }
       });
     </script>
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   </body>
 </html>

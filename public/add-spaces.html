@@ -5,43 +5,91 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IPRSR Management - Add New Parking Spaces</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div id="navbar-placeholder"></div>
 
     <div class="main-content">
-        <h2>Add New Parking Spaces</h2>
-        <div class="table-container">
-            <table id="spaces-table">
-                <thead>
-                    <tr>
-                        <th>Space ID</th>
-                        <th>Type</th>
-                        <th>Nearest</th>
-                        <th>Covered</th>
-                        <th>Wheelchair</th>
-                        <th>Large</th>
-                        <th>Well Lit</th>
-                        <th>EV</th>
-                        <th>Family</th>
-                        <th>Premium</th>
-                        <th>Lot ID</th>
-                        <th>Status</th>
-                        <th>Location</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        
+        <div class="space-form-container">
+            <h2>Add New Parking Space</h2>
+            <form id="addSpaceForm" onsubmit="event.preventDefault(); addParkingSpace();">
+                <input type="hidden" id="lotSelect" required>
+
+                <div class="form-group">
+                    <label for="spaceID">Space ID:</label>
+                    <input type="text" id="spaceID" readonly required>
+                </div>
+
+                <div class="form-group">
+                    <label for="parkingType">Parking Type:</label>
+                    <select id="parkingType" required disabled>
+                        <option value="">Select type</option>
+                        <option value="Special">Special (Disability)</option>
+                        <option value="Female">Female</option>
+                        <option value="Premium">Premium</option>
+                        <option value="EV">EV Charging</option>
+                        <option value="Family">Family</option>
+                        <option value="Regular">Regular</option>
+                    </select>
+                </div>
+
+                <div class="checkbox-group-container">
+                    <label class="checkbox-group-label">Parking Features:</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="isNearest"> Nearest</label>
+                        <label><input type="checkbox" id="isCovered"> Covered</label>
+                        <label><input type="checkbox" id="isWheelchairAccessible"> Wheelchair Accessible</label>
+                        <label><input type="checkbox" id="hasLargeSpace"> Large Space</label>
+                        <label><input type="checkbox" id="isWellLitArea"> Well Lit Area</label>
+                        <label><input type="checkbox" id="hasEVCharging"> EV Charging</label>
+                        <label><input type="checkbox" id="isFamilyParkingArea"> Family Parking</label>
+                        <label><input type="checkbox" id="isPremium"> Premium</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Mark Space Location:</label>
+                    <button type="button" onclick="startSpaceMarking()" class="action-btn">
+                        <i class="fas fa-map-marker-alt"></i> Mark on Map
+                    </button>
+                </div>
+
+                <div id="space-map" style="height: 400px; margin: 20px 0;"></div>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Add Parking Space</button>
+                    <button type="button" onclick="resetSpaceForm()" class="reset-btn">Reset Form</button>
+                    <button type="button" onclick="window.location.href='index.html'" class="cancel-btn">Cancel</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="app.js"></script>
     <script>
         $(document).ready(function() {
             $("#navbar-placeholder").load("navbar.html");
-            loadParkingSpaces(); // Load parking spaces when the page is ready
+            
+            // Get lotID from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const lotID = urlParams.get('lotID');
+            
+            if (!lotID) {
+                alert('No lot ID specified');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Set the hidden lot input value
+            document.getElementById('lotSelect').value = lotID;
+            
+            // Generate space ID immediately
+            loadNextSpaceID(lotID);
         });
     </script>
 </body>

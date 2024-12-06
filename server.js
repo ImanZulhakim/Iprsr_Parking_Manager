@@ -46,16 +46,51 @@ app.get("/add-lot.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public/add-lot.html"));
 });
 
+// API to edit parking space
 app.post("/edit-parking-space", (req, res) => {
   const updatedSpace = req.body;
-  // Save the updated space to the database or process it
-  // Assume you save successfully and redirect to the lot's view
+  
+  const query = `
+    UPDATE parking_spaces 
+    SET parkingType = ?, 
+        isNearest = ?, 
+        isCovered = ?, 
+        isWheelchairAccessible = ?, 
+        hasLargeSpace = ?, 
+        isWellLitArea = ?, 
+        hasEVCharging = ?, 
+        isFamilyParkingArea = ?, 
+        isPremium = ?, 
+        isAvailable = ?,
+        coordinates = ?
+    WHERE parkingSpaceID = ?`;
 
-  res.json({
-    message: "Parking space updated successfully",
-    redirectUrl: `/index.html?lotID=${updatedSpace.lotID}`, // Pass the redirect URL
+  const values = [
+    updatedSpace.parkingType,
+    updatedSpace.isNearest,
+    updatedSpace.isCovered,
+    updatedSpace.isWheelchairAccessible,
+    updatedSpace.hasLargeSpace,
+    updatedSpace.isWellLitArea,
+    updatedSpace.hasEVCharging,
+    updatedSpace.isFamilyParkingArea,
+    updatedSpace.isPremium,
+    updatedSpace.isAvailable,
+    updatedSpace.coordinates,
+    updatedSpace.parkingSpaceID
+  ];
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error("Error updating parking space:", err);
+      res.status(500).json({ error: "Failed to update parking space" });
+      return;
+    }
+    res.json({
+      message: "Parking space updated successfully",
+      redirectUrl: `/index.html?lotID=${updatedSpace.lotID}`
+    });
   });
-  a;
 });
 
 // API to fetch parking lot boundaries
@@ -246,6 +281,7 @@ app.get("/get-lot-boundary/:lotID", (req, res) => {
   });
 });
 
+// Check if lot exists and has boundaries
 app.get("/check-lot/:lotID", (req, res) => {
   const lotID = req.params.lotID;
 
@@ -310,7 +346,7 @@ app.post("/create-space", (req, res) => {
          isWheelchairAccessible, hasLargeSpace, isWellLitArea,
          hasEVCharging, isFamilyParkingArea, isPremium, 
          isAvailable, lotID, coordinates)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, POINT(?, ?))
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
   const values = [
@@ -326,8 +362,7 @@ app.post("/create-space", (req, res) => {
     isPremium,
     isAvailable,
     lotID,
-    coordinates[0],
-    coordinates[1],
+    coordinates
   ];
 
   console.log("Executing query with values:", values); // Debug log
@@ -349,18 +384,45 @@ app.post("/create-space", (req, res) => {
   });
 });
 
-// Get all parking spaces
+// Get spaces for a specific lot
 app.get("/get-spaces", (req, res) => {
   const lotID = req.query.lotID;
-  const query = "SELECT * FROM parkingspace WHERE lotID = ?";
+  
+  if (!lotID) {
+    res.status(400).json({ error: "Lot ID is required" });
+    return;
+  }
 
+  const query = "SELECT * FROM parkingspace WHERE lotID = ?";
+  
   db.query(query, [lotID], (err, results) => {
     if (err) {
+      console.error("Database error:", err);
       res.status(500).json({ error: "Database error" });
       return;
     }
     res.json(results);
   });
+});
+
+// Update lot spaces count
+app.put('/update-lot-spaces/:lotID', async (req, res) => {
+  try {
+    const lotID = req.params.lotID;
+    // Count spaces for this lot
+    const [result] = await pool.query(
+      'SELECT COUNT(*) as count FROM parking_spaces WHERE lotID = ?', 
+      [lotID]
+    );
+    // Update lot with new count
+    await pool.query(
+      'UPDATE parking_lots SET spaces = ? WHERE lotID = ?',
+      [result[0].count, lotID]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Update parking space
@@ -449,6 +511,7 @@ app.delete("/delete-space/:id", (req, res) => {
   );
 });
 
+// Update lot spaces count
 app.post("/update-lot-spaces", (req, res) => {
   const { lotID, action } = req.body;
 
@@ -462,6 +525,7 @@ app.post("/update-lot-spaces", (req, res) => {
   });
 });
 
+// Get next available space number
 app.get("/get-next-space-number/:lotID", (req, res) => {
   const lotID = req.params.lotID;
 
