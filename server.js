@@ -194,7 +194,27 @@ app.post("/create-lot", (req, res) => {
   });
 });
 
-// Delete parking lot and its boundaries
+
+// Check if lot has spaces
+app.get("/check-lot-spaces/:lotID", (req, res) => {
+  const lotID = req.params.lotID;
+  const query = "SELECT COUNT(*) as count FROM parkingspace WHERE lotID = ?";
+  
+  db.query(query, [lotID], (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Error checking parking spaces",
+        error: err.message
+      });
+    }
+    res.json({
+      hasSpaces: results[0].count > 0,
+      spaceCount: results[0].count
+    });
+  });
+});
+
+// Delete a parking lot
 app.delete("/delete-lot/:lotID", (req, res) => {
   const lotID = req.params.lotID;
 
@@ -203,46 +223,58 @@ app.delete("/delete-lot/:lotID", (req, res) => {
     if (err) {
       return res.status(500).json({
         message: "Transaction error",
-        error: err.message,
+        error: err.message
       });
     }
 
-    // First delete from parking_lot_boundaries
-    const deleteBoundariesQuery =
-      "DELETE FROM parking_lot_boundaries WHERE lotID = ?";
-    db.query(deleteBoundariesQuery, [lotID], (err) => {
+    // First delete all parking spaces
+    const deleteSpacesQuery = "DELETE FROM parkingspace WHERE lotID = ?";
+    db.query(deleteSpacesQuery, [lotID], (err) => {
       if (err) {
         return db.rollback(() => {
           res.status(500).json({
-            message: "Error deleting boundaries",
-            error: err.message,
+            message: "Error deleting parking spaces",
+            error: err.message
           });
         });
       }
 
-      // Then delete from parkinglot
-      const deleteLotQuery = "DELETE FROM parkinglot WHERE lotID = ?";
-      db.query(deleteLotQuery, [lotID], (err) => {
+      // Then delete boundaries
+      const deleteBoundariesQuery = "DELETE FROM parking_lot_boundaries WHERE lotID = ?";
+      db.query(deleteBoundariesQuery, [lotID], (err) => {
         if (err) {
           return db.rollback(() => {
             res.status(500).json({
-              message: "Error deleting parking lot",
-              error: err.message,
+              message: "Error deleting boundaries",
+              error: err.message
             });
           });
         }
 
-        // Commit the transaction
-        db.commit((err) => {
+        // Finally delete the lot itself
+        const deleteLotQuery = "DELETE FROM parkinglot WHERE lotID = ?";
+        db.query(deleteLotQuery, [lotID], (err) => {
           if (err) {
             return db.rollback(() => {
               res.status(500).json({
-                message: "Error committing transaction",
-                error: err.message,
+                message: "Error deleting parking lot",
+                error: err.message
               });
             });
           }
-          res.json({ message: `Parking lot ${lotID} deleted successfully` });
+
+          // Commit the transaction
+          db.commit((err) => {
+            if (err) {
+              return db.rollback(() => {
+                res.status(500).json({
+                  message: "Error committing transaction",
+                  error: err.message
+                });
+              });
+            }
+            res.json({ message: `Parking lot ${lotID} and all associated data deleted successfully` });
+          });
         });
       });
     });
@@ -594,18 +626,6 @@ app.put("/update-space/:id", (req, res) => {
   });
 });
 
-// Delete a parking space
-app.delete("/delete-space/:id", (req, res) => {
-  const { id } = req.params;
-  const query = "DELETE FROM parkingspace WHERE parkingSpaceID = ?";
-  db.query(query, [id], (err, result) => {
-    if (err) {
-      res.status(500).json({ message: "Error deleting parking space" });
-      return;
-    }
-    res.json({ message: "Parking space deleted successfully" });
-  });
-});
 
 app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, "public/404.html"));

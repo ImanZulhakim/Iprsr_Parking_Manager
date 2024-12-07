@@ -73,7 +73,7 @@ function startDrawing() {
   const location = document.getElementById("lotName").value;
 
   if (!lotID || !location) {
-    alert("Please enter both Lot ID and Location Name first!");
+    showPopup("Please enter both Lot ID and Location Name first!", "error");
     return;
   }
 
@@ -92,7 +92,7 @@ function startDrawing() {
     })
     .catch((err) => {
       console.error("Error creating parking lot:", err);
-      alert("Error creating parking lot. Please try again.");
+      showPopup("Error creating parking lot. Please try again.", "error");
     });
 }
 
@@ -174,13 +174,14 @@ function initializeDrawingMap(lotID) {
       }),
     })
       .then(() => {
-        alert("Parking lot boundary saved successfully!");
+        showPopup("Parking lot boundary saved successfully!", "success");
         drawnItems.addLayer(layer);
         window.location.href = "index.html";
       })
       .catch((err) => {
         console.error("Error saving boundary:", err);
-        alert("Error saving boundary. Please try again.");
+        showPopup("Error saving boundary. Please try again.", "error");
+
       });
   });
 }
@@ -198,37 +199,73 @@ function createNewLot(lotID, location) {
     })
     .catch((err) => {
       console.error("Error creating parking lot:", err);
-      alert("Error creating parking lot. Please try again.");
+      showPopup("Error creating parking lot. Please try again.", "error");
     });
 }
 
-// Delete a parking lot
-function deleteParkingLot(lotID) {
-  if (
-    !confirm(
-      `Are you sure you want to delete parking lot ${lotID}? This will also delete all associated boundaries.`
-    )
-  ) {
-    return;
-  }
+// Delete parking lot
+async function deleteParkingLot(lotID) {
+  try {
+    const initialConfirm = await showConfirmDialog("Are you sure you want to delete this parking lot? This action cannot be undone.");
+    
+    if (!initialConfirm) return;
 
-  fetch(`/delete-lot/${lotID}`, {
-    method: "DELETE",
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+    const response = await fetch(`/check-lot-spaces/${lotID}`);
+    const data = await response.json();
+    
+    if (data.hasSpaces) {
+      const spaceConfirm = await showConfirmDialog(
+        `This parking lot contains ${data.spaceCount} parking spaces. Do you want to delete the lot and all its spaces?`
+      );
+      if (spaceConfirm) {
+        performLotDeletion(lotID);
       }
-      return response.json();
-    })
-    .then((data) => {
-      alert(data.message);
-      loadParkingLots(); // Refresh the table
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      alert("Error deleting parking lot. Please try again.");
-    });
+    } else {
+      performLotDeletion(lotID);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showPopup("Error checking parking spaces. Please try again.", "error");
+  }
+}
+
+// Perform lot deletion
+function performLotDeletion(lotID) {
+  fetch(`/delete-lot/${lotID}`, {
+    method: 'DELETE'
+  })
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(err => Promise.reject(err));
+    }
+    return response.json();
+  })
+  .then(data => {
+    showPopup(data.message, "success");
+    loadParkingLots(); // Refresh lots list
+    
+    // Clear and hide parking spaces table
+    const spacesContainer = document.querySelector("#parking-spaces-container");
+    if (spacesContainer) {
+      spacesContainer.style.display = "none";
+    }
+    
+    // Clear and hide map
+    const mapContainer = document.querySelector("#view-map-container");
+    if (mapContainer) {
+      mapContainer.style.display = "none";
+    }
+    
+    // Remove map instance if exists
+    if (currentMap) {
+      currentMap.remove();
+      currentMap = null;
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showPopup(error.message || "Error deleting parking lot. Please try again.", "error");
+  });
 }
 
 // Load parking lots
@@ -266,7 +303,7 @@ function loadParkingLots() {
     })
     .catch((err) => {
       console.error("Error loading parking lots:", err);
-      alert("Failed to load parking lots. " + err.message);
+      showPopup("Failed to load parking lots. " + err.message, "error");
     });
 }
 
@@ -353,7 +390,6 @@ function viewLot(lotID) {
                     } else if (space.isPremium) {
                       markerColor = "#FFD54F"; // yellow/gold for premium
                     }
-
                     // Create custom marker icon with Google Maps style
                     const markerIcon = L.divIcon({
                       className: "custom-marker",
@@ -435,7 +471,7 @@ function viewLot(lotID) {
     })
     .catch((err) => {
       console.error("Error fetching spaces:", err);
-      alert("Failed to load parking spaces.");
+      showPopup("Failed to load parking spaces.", "error");
     });
 }
 
@@ -639,13 +675,13 @@ function editParkingSpace(event) {
       return response.json();
     })
     .then((data) => {
-      alert("Parking space updated successfully!");
+      showPopup("Parking space updated successfully!", "success");
       // Redirect back to the lot view
       window.location.href = `index.html?lotID=${updatedSpace.lotID}`;
     })
     .catch((error) => {
       console.error("Error updating parking space:", error);
-      alert("Error updating parking space: " + error.message);
+      showPopup("Error updating parking space: " + error.message, "error");
     });
 }
 
@@ -689,7 +725,7 @@ function initializeEditSpaceMap(coordinates) {
   }, 500);
 }
 
-// Add this function to load parking space data
+// Load parking space data
 function loadParkingSpaceData(spaceID) {
   fetch(`/get-parking-space/${spaceID}`)
     .then((res) => res.json())
@@ -717,7 +753,7 @@ function loadParkingSpaceData(spaceID) {
         .then((response) => response.json())
         .then((coordinates) => {
           if (!coordinates || coordinates.length === 0) {
-            alert("No boundary found for this parking lot");
+            showPopup("No boundary found for this parking lot", "error");
             return;
           }
 
@@ -808,16 +844,16 @@ function loadParkingSpaceData(spaceID) {
         })
         .catch((err) => {
           console.error("Error loading lot boundaries:", err);
-          alert("Error loading lot boundaries");
+          showPopup("Error loading lot boundaries", "error");
         });
     })
     .catch((error) => {
       console.error("Error loading parking space data:", error);
-      alert("Failed to load parking space data");
+      showPopup("Failed to load parking space data", "error");
     });
 }
 
-// Add this helper function for checkbox updates
+// Update checkboxes based on parking type
 function updateCheckboxesBasedOnType(parkingType) {
   // Reset all checkboxes first
   const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]');
@@ -846,6 +882,7 @@ function updateCheckboxesBasedOnType(parkingType) {
   }
 }
 
+// Set checkboxes
 function setCheckboxes(names) {
   names.forEach(name => {
     const checkbox = document.querySelector(`input[name="${name}"]`);
@@ -853,6 +890,58 @@ function setCheckboxes(names) {
       checkbox.checked = true;
       checkbox.parentElement.classList.add('auto-selected');
     }
+  });
+}
+
+// Custom popup function
+function showPopup(message, type = 'info') {
+  const popup = document.createElement('div');
+  popup.className = `custom-popup ${type}`;
+  popup.innerHTML = `
+    <div class="popup-content">
+      <p>${message}</p>
+      <button onclick="this.parentElement.parentElement.remove()">OK</button>
+    </div>
+  `;
+  document.body.appendChild(popup);
+  
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    if (popup.parentElement) {
+      popup.remove();
+    }
+  }, 5000);
+}
+
+// Confirmation dialog
+function showConfirmDialog(message) {
+  return new Promise((resolve) => {
+    const popup = document.createElement('div');
+    popup.className = 'confirm-popup';
+    popup.innerHTML = `
+      <div class="confirm-content">
+        <p>${message}</p>
+        <div class="confirm-buttons">
+          <button class="confirm-cancel">Cancel</button>
+          <button class="confirm-delete">Delete</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    const cancelBtn = popup.querySelector('.confirm-cancel');
+    const deleteBtn = popup.querySelector('.confirm-delete');
+
+    cancelBtn.addEventListener('click', () => {
+      popup.remove();
+      resolve(false);
+    });
+
+    deleteBtn.addEventListener('click', () => {
+      popup.remove();
+      resolve(true);
+    });
   });
 }
 
@@ -933,13 +1022,13 @@ function addParkingSpace() {
     : "N/A";
 
   if (!spaceID || !parkingType || !lotID || !currentSpaceCoordinates) {
-    alert("Please complete all fields and mark a location on the map.");
+    showPopup("Please complete all fields and mark a location on the map.", "error");
     return;
   }
 
   // Add this validation
   if (!parkingType || parkingType === "undefined") {
-    alert("Please select a valid parking type");
+    showPopup("Please select a valid parking type", "error");
     return;
   }
 
@@ -987,17 +1076,18 @@ function addParkingSpace() {
         method: "PUT",
       });
 
-      alert("Parking space added successfully!");
+      showPopup("Parking space added successfully!", "success");
       window.location.href = `index.html?lotID=${lotID}`;
     })
     .catch((error) => {
       console.error("Error creating parking space:", error);
-      alert("Failed to add parking space: " + error.message);
+      showPopup("Failed to add parking space: " + error.message, "error");
     });
 }
+
 // Delete parking space
-function deleteParkingSpace(spaceID) {
-  if (confirm("Are you sure you want to delete this parking space?")) {
+async function deleteParkingSpace(spaceID) {
+  if (await showConfirmDialog("Are you sure you want to delete this parking space?")) {
     fetch(`/delete-space/${spaceID}`, {
       method: "DELETE",
       headers: {
@@ -1011,13 +1101,13 @@ function deleteParkingSpace(spaceID) {
         return response.json();
       })
       .then((data) => {
-        alert("Parking space deleted successfully");
+        showPopup("Parking space deleted successfully", "success");
         // Refresh the current page to update the table
         location.reload();
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert("Failed to delete parking space: " + error.message);
+        showPopup("Failed to delete parking space: " + error.message, "error");
       });
   }
 }
@@ -1056,7 +1146,7 @@ function viewLotOnMap(lotID) {
     })
     .then((coordinates) => {
       if (!coordinates || coordinates.length === 0) {
-        alert("No boundary data found for this lot");
+        showPopup("No boundary data found for this lot", "error");
         return;
       }
 
@@ -1069,7 +1159,7 @@ function viewLotOnMap(lotID) {
     })
     .catch((err) => {
       console.error("Error fetching lot boundary:", err);
-      alert("Failed to load lot boundary.");
+      showPopup("Failed to load lot boundary.", "error");
     });
 }
 
@@ -1079,7 +1169,10 @@ function startSpaceMarking() {
   const spaceID = document.getElementById("spaceID").value;
 
   if (!lotID || !spaceID) {
-    alert("Please select a parking lot and generate a space ID first.");
+    showPopup(
+      "Please select a parking lot and generate a space ID first.",
+      "error"
+    );
     return;
   }
 
@@ -1088,7 +1181,7 @@ function startSpaceMarking() {
     .then((response) => response.json())
     .then((coordinates) => {
       if (!coordinates || coordinates.length === 0) {
-        alert("No boundary found for this parking lot.");
+        showPopup("No boundary found for this parking lot.", "error");
         return;
       }
 
@@ -1170,10 +1263,9 @@ function startSpaceMarking() {
     })
     .catch((err) => {
       console.error("Error loading lot boundaries:", err);
-      alert("Error loading lot boundaries. Please try again.");
+      showPopup("Error loading lot boundaries. Please try again.", "error");
     });
 }
-
 
 // Calculate lot center point
 function calculateLotCenterPoint(lotID) {
@@ -1258,7 +1350,7 @@ function loadNextSpaceID(lotID) {
     })
     .catch((err) => {
       console.error("Error getting next space number:", err);
-      alert("Error generating space ID");
+      showPopup("Error generating space ID", "error");
     });
 }
 
@@ -1303,6 +1395,7 @@ function resetSpaceForm() {
   }
 }
 
+// Load parking spaces
 function loadParkingSpaces() {
   const lotID = document.getElementById("lotSelect").value;
   if (!lotID) return;
@@ -1311,6 +1404,7 @@ function loadParkingSpaces() {
   loadNextSpaceID(lotID);
 }
 
+// Load parking spaces based on lot ID
 function loadParkingSpaces(lotID) {
   fetch(`/get-spaces/${lotID}`)
     .then((response) => response.json())
@@ -1352,7 +1446,7 @@ function loadParkingSpaces(lotID) {
     })
     .catch((error) => {
       console.error("Error loading parking spaces:", error);
-      alert("Failed to load parking spaces");
+      showPopup("Failed to load parking spaces", "error");
     });
 }
 
@@ -1434,3 +1528,4 @@ document
       this.parentElement.classList.remove("auto-selected");
     });
   });
+
