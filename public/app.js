@@ -176,12 +176,14 @@ function initializeDrawingMap(lotID) {
       .then(() => {
         showPopup("Parking lot boundary saved successfully!", "success");
         drawnItems.addLayer(layer);
-        window.location.href = "index.html";
+        // Add delay before redirect
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 2000); // Wait 2 seconds before redirecting
       })
       .catch((err) => {
         console.error("Error saving boundary:", err);
         showPopup("Error saving boundary. Please try again.", "error");
-
       });
   });
 }
@@ -206,13 +208,15 @@ function createNewLot(lotID, location) {
 // Delete parking lot
 async function deleteParkingLot(lotID) {
   try {
-    const initialConfirm = await showConfirmDialog("Are you sure you want to delete this parking lot? This action cannot be undone.");
-    
+    const initialConfirm = await showConfirmDialog(
+      "Are you sure you want to delete this parking lot? This action cannot be undone."
+    );
+
     if (!initialConfirm) return;
 
     const response = await fetch(`/check-lot-spaces/${lotID}`);
     const data = await response.json();
-    
+
     if (data.hasSpaces) {
       const spaceConfirm = await showConfirmDialog(
         `This parking lot contains ${data.spaceCount} parking spaces. Do you want to delete the lot and all its spaces?`
@@ -224,7 +228,7 @@ async function deleteParkingLot(lotID) {
       performLotDeletion(lotID);
     }
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
     showPopup("Error checking parking spaces. Please try again.", "error");
   }
 }
@@ -232,40 +236,45 @@ async function deleteParkingLot(lotID) {
 // Perform lot deletion
 function performLotDeletion(lotID) {
   fetch(`/delete-lot/${lotID}`, {
-    method: 'DELETE'
+    method: "DELETE",
   })
-  .then(response => {
-    if (!response.ok) {
-      return response.json().then(err => Promise.reject(err));
-    }
-    return response.json();
-  })
-  .then(data => {
-    showPopup(data.message, "success");
-    loadParkingLots(); // Refresh lots list
-    
-    // Clear and hide parking spaces table
-    const spacesContainer = document.querySelector("#parking-spaces-container");
-    if (spacesContainer) {
-      spacesContainer.style.display = "none";
-    }
-    
-    // Clear and hide map
-    const mapContainer = document.querySelector("#view-map-container");
-    if (mapContainer) {
-      mapContainer.style.display = "none";
-    }
-    
-    // Remove map instance if exists
-    if (currentMap) {
-      currentMap.remove();
-      currentMap = null;
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    showPopup(error.message || "Error deleting parking lot. Please try again.", "error");
-  });
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((err) => Promise.reject(err));
+      }
+      return response.json();
+    })
+    .then((data) => {
+      showPopup(data.message, "success");
+      loadParkingLots(); // Refresh lots list
+
+      // Clear and hide parking spaces table
+      const spacesContainer = document.querySelector(
+        "#parking-spaces-container"
+      );
+      if (spacesContainer) {
+        spacesContainer.style.display = "none";
+      }
+
+      // Clear and hide map
+      const mapContainer = document.querySelector("#view-map-container");
+      if (mapContainer) {
+        mapContainer.style.display = "none";
+      }
+
+      // Remove map instance if exists
+      if (currentMap) {
+        currentMap.remove();
+        currentMap = null;
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      showPopup(
+        error.message || "Error deleting parking lot. Please try again.",
+        "error"
+      );
+    });
 }
 
 // Load parking lots
@@ -293,8 +302,25 @@ function loadParkingLots() {
         <td>${lot.lotID}</td>
         <td>${lot.location}</td>
         <td>
-          <button class="action-btn view-btn" onclick="viewLot('${lot.lotID}')"><i class="fas fa-eye"></i> View Spaces</button>
-          <button class="action-btn delete-btn" onclick="deleteParkingLot('${lot.lotID}')"><i class="fas fa-trash"></i></button>
+          <button class="action-btn view-btn" onclick="viewLot('${lot.lotID}')">
+            <i class="fas fa-eye"></i> View Spaces
+          </button>
+          <div class="toggle-container">
+            <input type="checkbox" id="toggle-${lot.lotID}" class="toggle-checkbox" onchange="toggleReserved('${lot.lotID}')">
+            <label class="toggle-label" for="toggle-${lot.lotID}">
+              <span class="toggle-inner">
+                <span class="toggle-text-unreserve">UNRESERVE</span>
+                <span class="toggle-text-reserve">RESERVE</span>
+              </span>
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+          <button class="action-btn edit-btn" onclick="editLotBoundary('${lot.lotID}')">
+            <i class="fas fa-draw-polygon"></i> Edit Boundary
+          </button>
+          <button class="action-btn delete-btn" onclick="deleteParkingLot('${lot.lotID}')">
+            <i class="fas fa-trash"></i>
+          </button>
         </td>
       </tr>`
             )
@@ -304,6 +330,188 @@ function loadParkingLots() {
     .catch((err) => {
       console.error("Error loading parking lots:", err);
       showPopup("Failed to load parking lots. " + err.message, "error");
+    });
+}
+
+
+
+// Add this new function
+function editLotBoundary(lotID) {
+  window.location.href = `edit-lot-boundary.html?lotID=${lotID}`;
+}
+
+// Initialize edit boundary page
+function initEditBoundaryPage(lotID) {
+  // Fetch the lot details
+  fetch(`/get-lot/${lotID}`)
+    .then((response) => response.json())
+    .then((lot) => {
+      // Update form fields with lot details
+      document.getElementById("lotID").value = lot.lotID;
+      document.getElementById("lotName").value = lot.location;
+
+      // Initialize map
+      if (currentMap) {
+        currentMap.remove();
+      }
+
+      currentMap = L.map("edit-boundary-map").setView([4.2105, 108.9758], 6);
+
+      // Add satellite layer
+      const satelliteTile = L.tileLayer(
+        "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+        {
+          subdomains: ["mt0", "mt1", "mt2", "mt3"],
+          maxZoom: 22,
+        }
+      ).addTo(currentMap);
+
+      // Add OpenStreetMap layer
+      const streets = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          maxZoom: 22,
+        }
+      );
+
+      // Add layer control
+      const baseMaps = {
+        Satellite: satelliteTile,
+        Streets: streets,
+      };
+      L.control.layers(baseMaps).addTo(currentMap);
+
+      // Initialize drawing feature group
+      drawnItems = new L.FeatureGroup();
+      currentMap.addLayer(drawnItems);
+
+      // Add draw control
+      const drawControl = new L.Control.Draw({
+        draw: {
+          polygon: true,
+          polyline: false,
+          circle: false,
+          rectangle: false,
+          circlemarker: false,
+          marker: false,
+        },
+        edit: {
+          featureGroup: drawnItems,
+        },
+      });
+      currentMap.addControl(drawControl);
+
+      // Load existing boundary
+      fetch(`/get-lot-boundary/${lotID}`)
+        .then((response) => response.json())
+        .then((coordinates) => {
+          if (coordinates && coordinates.length > 0) {
+            const polygon = L.polygon(coordinates, {
+              color: "blue",
+              fillOpacity: 0.4,
+            }).addTo(drawnItems);
+            currentMap.fitBounds(polygon.getBounds());
+          }
+        });
+
+      // Handle new boundary drawing
+      currentMap.on(L.Draw.Event.CREATED, function (event) {
+        drawnItems.clearLayers();
+        const layer = event.layer;
+        const coordinates = layer
+          .getLatLngs()[0]
+          .map((coord) => [coord.lat, coord.lng]);
+
+        // Calculate center point
+        const centerLat =
+          coordinates.reduce((sum, coord) => sum + coord[0], 0) /
+          coordinates.length;
+        const centerLng =
+          coordinates.reduce((sum, coord) => sum + coord[1], 0) /
+          coordinates.length;
+
+        // Save updated boundary
+        fetch("/save-lot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lotID,
+            coordinates,
+            centerCoordinates: [centerLat, centerLng],
+          }),
+        })
+          .then(() => {
+            showPopup("Parking lot boundary updated successfully!", "success");
+            drawnItems.addLayer(layer);
+            setTimeout(() => {
+              window.location.href = "index.html";
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error("Error saving boundary:", err);
+            showPopup("Error saving boundary. Please try again.", "error");
+          });
+      });
+    })
+    .catch((error) => {
+      console.error("Error loading lot details:", error);
+      showPopup("Error loading lot details. Please try again.", "error");
+    });
+}
+
+// Cancel edit boundary
+async function cancelEdit() {
+  const confirmed = await showConfirmDialog("Are you sure you want to cancel? Any unsaved changes will be lost.");
+  if (confirmed) {
+      window.location.href = "index.html";
+  }
+}
+
+// Toggle reserved status for all spaces in a lot
+function toggleReserved(lotID) {
+  fetch(`/get-spaces?lotID=${lotID}`)
+    .then(response => response.json())
+    .then(spaces => {
+      // Check if any space is not Regular to determine the toggle state
+      const shouldReserve = spaces.some(space => space.parkingType !== 'Regular');
+      
+      // Update all spaces in the lot
+      const updatePromises = spaces.map(space => {
+        const updates = shouldReserve ? {
+          // When reserving, store original type and set to Regular
+          originalType: space.parkingType,
+          parkingType: 'Regular'
+        } : {
+          // When unreserving, restore original type if exists
+          parkingType: space.originalType || 'Regular',
+          originalType: null
+        };
+
+        return fetch(`/update-space/${space.parkingSpaceID}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updates)
+        });
+      });
+
+      Promise.all(updatePromises)
+        .then(() => {
+          showPopup(`Parking lot ${shouldReserve ? 'reserved' : 'unreserved'} successfully!`, 'success');
+          // Refresh the view if currently viewing this lot
+          if (currentLotID === lotID) {
+            viewLot(lotID);
+          }
+        })
+        .catch(error => {
+          console.error('Error updating spaces:', error);
+          showPopup('Error updating parking spaces', 'error');
+        });
+    })
+    .catch(error => {
+      console.error('Error fetching spaces:', error);
+      showPopup('Error fetching parking spaces', 'error');
     });
 }
 
@@ -711,7 +919,9 @@ function initializeEditSpaceMap(coordinates) {
     const [lat, lng] = coordinates.split(",").map(parseFloat);
     if (!isNaN(lat) && !isNaN(lng)) {
       editSpaceMap.setView([lat, lng], 19);
-      editSpaceMarker = L.marker([lat, lng], { draggable: true }).addTo(editSpaceMap);
+      editSpaceMarker = L.marker([lat, lng], { draggable: true }).addTo(
+        editSpaceMap
+      );
       console.log("Marker added at:", lat, lng);
     } else {
       console.error("Invalid coordinates:", coordinates);
@@ -731,22 +941,33 @@ function loadParkingSpaceData(spaceID) {
     .then((res) => res.json())
     .then((space) => {
       // Fill form fields with space data
-      document.querySelector('input[name="spaceID"]').value = space.parkingSpaceID;
+      document.querySelector('input[name="spaceID"]').value =
+        space.parkingSpaceID;
       document.querySelector('input[name="lotID"]').value = space.lotID;
       document.getElementById("displaySpaceID").value = space.parkingSpaceID;
       document.getElementById("displayLotID").value = space.lotID;
-      document.querySelector('select[name="parkingType"]').value = space.parkingType;
+      document.querySelector('select[name="parkingType"]').value =
+        space.parkingType;
 
       // Set checkbox values
-      document.querySelector('input[name="isNearest"]').checked = space.isNearest === 1;
-      document.querySelector('input[name="isCovered"]').checked = space.isCovered === 1;
-      document.querySelector('input[name="isWheelchairAccessible"]').checked = space.isWheelchairAccessible === 1;
-      document.querySelector('input[name="hasLargeSpace"]').checked = space.hasLargeSpace === 1;
-      document.querySelector('input[name="isWellLitArea"]').checked = space.isWellLitArea === 1;
-      document.querySelector('input[name="hasEVCharging"]').checked = space.hasEVCharging === 1;
-      document.querySelector('input[name="isFamilyParkingArea"]').checked = space.isFamilyParkingArea === 1;
-      document.querySelector('input[name="isPremium"]').checked = space.isPremium === 1;
-      document.querySelector('input[name="isAvailable"]').checked = space.isAvailable === 1;
+      document.querySelector('input[name="isNearest"]').checked =
+        space.isNearest === 1;
+      document.querySelector('input[name="isCovered"]').checked =
+        space.isCovered === 1;
+      document.querySelector('input[name="isWheelchairAccessible"]').checked =
+        space.isWheelchairAccessible === 1;
+      document.querySelector('input[name="hasLargeSpace"]').checked =
+        space.hasLargeSpace === 1;
+      document.querySelector('input[name="isWellLitArea"]').checked =
+        space.isWellLitArea === 1;
+      document.querySelector('input[name="hasEVCharging"]').checked =
+        space.hasEVCharging === 1;
+      document.querySelector('input[name="isFamilyParkingArea"]').checked =
+        space.isFamilyParkingArea === 1;
+      document.querySelector('input[name="isPremium"]').checked =
+        space.isPremium === 1;
+      document.querySelector('input[name="isAvailable"]').checked =
+        space.isAvailable === 1;
 
       // Initialize map with lot boundary
       fetch(`/get-lot-boundary/${space.lotID}`)
@@ -805,19 +1026,24 @@ function loadParkingSpaceData(spaceID) {
           // If space has coordinates, add marker
           if (space.coordinates) {
             try {
-              const [lat, lng] = space.coordinates.split(",").map(coord => parseFloat(coord.trim()));
+              const [lat, lng] = space.coordinates
+                .split(",")
+                .map((coord) => parseFloat(coord.trim()));
               if (!isNaN(lat) && !isNaN(lng)) {
                 editSpaceMarker = L.marker([lat, lng], {
-                  draggable: true
+                  draggable: true,
                 }).addTo(editSpaceMap);
 
                 // Update coordinates when marker is dragged
-                editSpaceMarker.on('dragend', function(e) {
+                editSpaceMarker.on("dragend", function (e) {
                   const pos = e.target.getLatLng();
-                  document.getElementById("coordinates").value = `${pos.lat},${pos.lng}`;
+                  document.getElementById(
+                    "coordinates"
+                  ).value = `${pos.lat},${pos.lng}`;
                 });
 
-                document.getElementById("coordinates").value = space.coordinates;
+                document.getElementById("coordinates").value =
+                  space.coordinates;
               }
             } catch (error) {
               console.error("Error setting marker:", error);
@@ -825,20 +1051,24 @@ function loadParkingSpaceData(spaceID) {
           }
 
           // Add click handler for updating marker position
-          editSpaceMap.on("click", function(e) {
+          editSpaceMap.on("click", function (e) {
             if (editSpaceMarker) {
               editSpaceMap.removeLayer(editSpaceMarker);
             }
 
             editSpaceMarker = L.marker(e.latlng, {
-              draggable: true
+              draggable: true,
             }).addTo(editSpaceMap);
 
-            document.getElementById("coordinates").value = `${e.latlng.lat},${e.latlng.lng}`;
+            document.getElementById(
+              "coordinates"
+            ).value = `${e.latlng.lat},${e.latlng.lng}`;
 
-            editSpaceMarker.on('dragend', function(e) {
+            editSpaceMarker.on("dragend", function (e) {
               const pos = e.target.getLatLng();
-              document.getElementById("coordinates").value = `${pos.lat},${pos.lng}`;
+              document.getElementById(
+                "coordinates"
+              ).value = `${pos.lat},${pos.lng}`;
             });
           });
         })
@@ -856,46 +1086,48 @@ function loadParkingSpaceData(spaceID) {
 // Update checkboxes based on parking type
 function updateCheckboxesBasedOnType(parkingType) {
   // Reset all checkboxes first
-  const checkboxes = document.querySelectorAll('.checkbox-group input[type="checkbox"]');
-  checkboxes.forEach(checkbox => {
+  const checkboxes = document.querySelectorAll(
+    '.checkbox-group input[type="checkbox"]'
+  );
+  checkboxes.forEach((checkbox) => {
     checkbox.checked = false;
-    checkbox.parentElement.classList.remove('auto-selected');
+    checkbox.parentElement.classList.remove("auto-selected");
   });
 
   // Auto-select based on type
   switch (parkingType) {
     case "Special":
-      setCheckboxes(['isNearest', 'isWheelchairAccessible', 'isWellLitArea']);
+      setCheckboxes(["isNearest", "isWheelchairAccessible", "isWellLitArea"]);
       break;
     case "Female":
-      setCheckboxes(['isNearest', 'isWellLitArea']);
+      setCheckboxes(["isNearest", "isWellLitArea"]);
       break;
     case "Premium":
-      setCheckboxes(['isPremium']);
+      setCheckboxes(["isPremium"]);
       break;
     case "EV":
-      setCheckboxes(['hasEVCharging']);
+      setCheckboxes(["hasEVCharging"]);
       break;
     case "Family":
-      setCheckboxes(['hasLargeSpace', 'isFamilyParkingArea']);
+      setCheckboxes(["hasLargeSpace", "isFamilyParkingArea"]);
       break;
   }
 }
 
 // Set checkboxes
 function setCheckboxes(names) {
-  names.forEach(name => {
+  names.forEach((name) => {
     const checkbox = document.querySelector(`input[name="${name}"]`);
     if (checkbox) {
       checkbox.checked = true;
-      checkbox.parentElement.classList.add('auto-selected');
+      checkbox.parentElement.classList.add("auto-selected");
     }
   });
 }
 
 // Custom popup function
-function showPopup(message, type = 'info') {
-  const popup = document.createElement('div');
+function showPopup(message, type = "info") {
+  const popup = document.createElement("div");
   popup.className = `custom-popup ${type}`;
   popup.innerHTML = `
     <div class="popup-content">
@@ -904,41 +1136,43 @@ function showPopup(message, type = 'info') {
     </div>
   `;
   document.body.appendChild(popup);
-  
-  // Auto-remove after 5 seconds
+
+  // Set different durations based on message type
+  const duration = type === "success" ? 8000 : 5000; // 8 seconds for success, 5 for others
+
   setTimeout(() => {
     if (popup.parentElement) {
       popup.remove();
     }
-  }, 5000);
+  }, duration);
 }
 
 // Confirmation dialog
 function showConfirmDialog(message) {
   return new Promise((resolve) => {
-    const popup = document.createElement('div');
-    popup.className = 'confirm-popup';
+    const popup = document.createElement("div");
+    popup.className = "confirm-popup";
     popup.innerHTML = `
       <div class="confirm-content">
         <p>${message}</p>
         <div class="confirm-buttons">
           <button class="confirm-cancel">Cancel</button>
-          <button class="confirm-delete">Delete</button>
+          <button class="confirm-delete">Confirm</button>
         </div>
       </div>
     `;
 
     document.body.appendChild(popup);
 
-    const cancelBtn = popup.querySelector('.confirm-cancel');
-    const deleteBtn = popup.querySelector('.confirm-delete');
+    const cancelBtn = popup.querySelector(".confirm-cancel");
+    const deleteBtn = popup.querySelector(".confirm-delete");
 
-    cancelBtn.addEventListener('click', () => {
+    cancelBtn.addEventListener("click", () => {
       popup.remove();
       resolve(false);
     });
 
-    deleteBtn.addEventListener('click', () => {
+    deleteBtn.addEventListener("click", () => {
       popup.remove();
       resolve(true);
     });
@@ -1022,7 +1256,10 @@ function addParkingSpace() {
     : "N/A";
 
   if (!spaceID || !parkingType || !lotID || !currentSpaceCoordinates) {
-    showPopup("Please complete all fields and mark a location on the map.", "error");
+    showPopup(
+      "Please complete all fields and mark a location on the map.",
+      "error"
+    );
     return;
   }
 
@@ -1087,7 +1324,11 @@ function addParkingSpace() {
 
 // Delete parking space
 async function deleteParkingSpace(spaceID) {
-  if (await showConfirmDialog("Are you sure you want to delete this parking space?")) {
+  if (
+    await showConfirmDialog(
+      "Are you sure you want to delete this parking space?"
+    )
+  ) {
     fetch(`/delete-space/${spaceID}`, {
       method: "DELETE",
       headers: {
@@ -1528,4 +1769,3 @@ document
       this.parentElement.classList.remove("auto-selected");
     });
   });
-
