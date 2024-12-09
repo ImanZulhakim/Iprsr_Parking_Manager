@@ -119,9 +119,12 @@ tr:hover {
 /* Set width for the Location column */
 #spaces-table th:nth-child(13),
 #spaces-table td:nth-child(13) {
-  width: 50px; /* Adjust width as needed */
-  word-wrap: break-word; /* Ensures content wraps if it overflows */
-  text-align: center; /* Optional: Center align content */
+    width: 50px;
+    /* Adjust width as needed */
+    word-wrap: break-word;
+    /* Ensures content wraps if it overflows */
+    text-align: center;
+    /* Optional: Center align content */
 }
 
 
@@ -188,7 +191,8 @@ h3 {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-width: 40px;  /* Reduced for icon-only buttons */
+    min-width: 40px;
+    /* Reduced for icon-only buttons */
 }
 
 .view-btn {
@@ -214,7 +218,8 @@ h3 {
 .delete-btn {
     background-color: #dc3545;
     color: white;
-    padding: 8px;  /* Smaller padding for icon-only */
+    padding: 8px;
+    /* Smaller padding for icon-only */
     min-width: 36px;
 }
 
@@ -321,7 +326,7 @@ h3 {
     padding: 20px;
     background-color: #fff;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .space-form-container .form-group {
@@ -473,7 +478,8 @@ h3 {
 }
 
 .form-actions button {
-    flex: 1;  /* Make all buttons take equal width */
+    flex: 1;
+    /* Make all buttons take equal width */
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
@@ -512,92 +518,91 @@ h3 {
 }
 
 .toggle-container {
-    display: inline-block;
     position: relative;
-    width: 100px;
-    height: 40px;
+    display: inline-block;
+    width: 120px;
+    height: 34px;
     margin: 0 10px;
-  }
-  
-  .toggle-checkbox {
+    vertical-align: middle;
+}
+
+.toggle-checkbox {
     display: none;
-  }
-  
-  .toggle-label {
+}
+
+.toggle-label {
     position: relative;
-    display: inline-block;
+    display: block;
+    height: 100%;
+    background-color: #fff;
+    border: 2px solid #ddd;
+    border-radius: 34px;
     cursor: pointer;
-    width: 100%;
-    height: 100%;
-    background-color: #e0e0e0;
-    border-radius: 20px;
     transition: background-color 0.3s ease;
-  }
-  
-  .toggle-inner {
-    position: absolute;
+}
+
+.toggle-checkbox:checked + .toggle-label {
+    background-color: #0077B6;
+    border-color: #0077B6;
+}
+
+.toggle-inner {
+    position: relative;
     display: flex;
+    justify-content: center;
     align-items: center;
-    justify-content: space-between;
     width: 100%;
     height: 100%;
-    padding: 0 10px;
-    box-sizing: border-box;
-    color: #fff;
-    font-size: 14px;
-    font-weight: bold;
-    text-transform: uppercase;
-  }
-  
-  .toggle-text-unreserve {
-    color: #aaa;
-    display: block;
-    transition: opacity 0.3s ease;
-  }
-  
-  .toggle-text-reserve {
-    color: #fff;
-    display: block;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  
-  .toggle-switch {
+}
+
+.toggle-inner span {
+    font-size: 12px;
+    font-weight: 500;
+    color: #666;
     position: absolute;
-    top: 5px;
-    left: 5px;
+    width: 100%;
+    text-align: center;
+}
+
+.toggle-checkbox:checked + .toggle-label .toggle-inner span {
+    color: white;
+}
+
+.toggle-inner span.reserve {
+    display: block;
+    margin-left: 30px;
+}
+
+.toggle-checkbox:checked + .toggle-label .toggle-inner span.reserve {
+    display: none;
+}
+
+.toggle-switch {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 2px;
     width: 30px;
     height: 30px;
-    background-color: white;
     border-radius: 50%;
+    background: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s ease;
-  }
-  
-  .toggle-checkbox:checked + .toggle-label {
-    background-color: #2196f3;
-  }
-  
-  .toggle-checkbox:checked + .toggle-label .toggle-switch {
-    transform: translateX(60px);
-  }
-  
-  .toggle-checkbox:checked + .toggle-label .toggle-text-unreserve {
-    opacity: 0;
-  }
-  
-  .toggle-checkbox:checked + .toggle-label .toggle-text-reserve {
-    opacity: 1;
-  }
-  
+    z-index: 1;
+}
+
+.toggle-checkbox:checked + .toggle-label .toggle-switch {
+    transform: translate(84px, -50%);
+}
+
 /* Styles specifically for edit-space.html */
 #edit-space-map {
     height: 400px;
     width: 100%;
     display: block;
-  }
+}
 
-  
+
 #edit-space-page {
     background-color: #f9fbfc;
     /* Light background to distinguish the edit page */
@@ -695,15 +700,15 @@ h3 {
 }
 
 .custom-marker {
-  position: relative;
+    position: relative;
 }
 
 .custom-marker div {
-  transition: transform 0.2s ease-out;
+    transition: transform 0.2s ease-out;
 }
 
 .custom-marker:hover div {
-  transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 .table-header {
@@ -730,48 +735,49 @@ h3 {
     background: white;
     padding: 15px;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     animation: slideIn 0.3s ease-out;
-  }
-  
-  .custom-popup.error {
+}
+
+.custom-popup.error {
     border-left: 4px solid #ff4444;
-  }
-  
-  .custom-popup.success {
+}
+
+.custom-popup.success {
     border-left: 4px solid #00C851;
-  }
-  
-  .custom-popup.info {
+}
+
+.custom-popup.info {
     border-left: 4px solid #33b5e5;
-  }
-  
-  .popup-content {
+}
+
+.popup-content {
     display: flex;
     align-items: center;
     gap: 15px;
-  }
-  
-  .popup-content button {
+}
+
+.popup-content button {
     padding: 5px 15px;
     border: none;
     border-radius: 4px;
     background: #f0f0f0;
     cursor: pointer;
-  }
-  
-  @keyframes slideIn {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
+}
 
-  .confirm-popup {
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.confirm-popup {
     position: fixed;
     top: 0;
     left: 0;
@@ -782,36 +788,36 @@ h3 {
     justify-content: center;
     align-items: center;
     z-index: 9999;
-  }
-  
-  .confirm-content {
+}
+
+.confirm-content {
     background: white;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     max-width: 400px;
     width: 90%;
-  }
-  
-  .confirm-buttons {
+}
+
+.confirm-buttons {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
     margin-top: 20px;
-  }
-  
-  .confirm-buttons button {
+}
+
+.confirm-buttons button {
     padding: 8px 16px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-  }
-  
-  .confirm-cancel {
+}
+
+.confirm-cancel {
     background: #f0f0f0;
-  }
-  
-  .confirm-delete {
+}
+
+.confirm-delete {
     background: #ff4444;
     color: white;
-  }
+}

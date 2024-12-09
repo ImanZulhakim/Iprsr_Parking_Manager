@@ -484,14 +484,49 @@ app.put('/update-lot-spaces/:lotID', async (req, res) => {
 app.put("/update-space/:id", (req, res) => {
   const { id } = req.params;
   const updates = req.body;
-  const query = "UPDATE parkingspace SET ? WHERE parkingSpaceID = ?";
-  db.query(query, [updates, id], (err, result) => {
-    if (err) {
-      res.status(500).json({ message: "Error updating parking space" });
-      return;
-    }
-    res.json({ message: "Parking space updated successfully" });
-  });
+
+  // If we're reserving (changing to Regular), store the current type first
+  if (updates.parkingType === "Regular") {
+    db.query(
+      "SELECT parkingType FROM parkingspace WHERE parkingSpaceID = ?",
+      [id],
+      (err, results) => {
+        if (err) {
+          res.status(500).json({ message: "Error updating parking space" });
+          return;
+        }
+        
+        // Store the original type before updating to Regular
+        updates.originalType = results[0].parkingType;
+        
+        // Now perform the update
+        db.query(
+          "UPDATE parkingspace SET ? WHERE parkingSpaceID = ?",
+          [updates, id],
+          (err, result) => {
+            if (err) {
+              res.status(500).json({ message: "Error updating parking space" });
+              return;
+            }
+            res.json({ message: "Parking space updated successfully" });
+          }
+        );
+      }
+    );
+  } else {
+    // Normal update without storing original type
+    db.query(
+      "UPDATE parkingspace SET ? WHERE parkingSpaceID = ?",
+      [updates, id],
+      (err, result) => {
+        if (err) {
+          res.status(500).json({ message: "Error updating parking space" });
+          return;
+        }
+        res.json({ message: "Parking space updated successfully" });
+      }
+    );
+  }
 });
 
 

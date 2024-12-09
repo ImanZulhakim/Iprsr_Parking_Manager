@@ -280,20 +280,11 @@ function performLotDeletion(lotID) {
 // Load parking lots
 function loadParkingLots() {
   fetch("/get-all-lots")
-    .then((response) => {
-      console.log("API response:", response); // Debug log
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
+    .then((response) => response.json())
     .then((lots) => {
-      console.log("Parking lots data:", lots); // Debug log
       const lotsTableBody = document.querySelector("#lots-table tbody");
-      if (!lotsTableBody) {
-        console.error("Could not find lots table body element");
-        return;
-      }
+      if (!lotsTableBody) return;
+
       lotsTableBody.innerHTML = lots.length
         ? lots
             .map(
@@ -306,14 +297,13 @@ function loadParkingLots() {
             <i class="fas fa-eye"></i> View Spaces
           </button>
           <div class="toggle-container">
-            <input type="checkbox" id="toggle-${lot.lotID}" class="toggle-checkbox" onchange="toggleReserved('${lot.lotID}')">
-            <label class="toggle-label" for="toggle-${lot.lotID}">
-              <span class="toggle-inner">
-                <span class="toggle-text-unreserve">UNRESERVE</span>
-                <span class="toggle-text-reserve">RESERVE</span>
-              </span>
-              <span class="toggle-switch"></span>
-            </label>
+              <input type="checkbox" id="toggle-${lot.lotID}" class="toggle-checkbox" onchange="toggleReserved('${lot.lotID}', this)">
+              <label for="toggle-${lot.lotID}" class="toggle-label">
+                  <div class="toggle-inner">
+                      <span class="reserve">RESERVE LOT</span>
+                  </div>
+                  <div class="toggle-switch"></div>
+              </label>
           </div>
           <button class="action-btn edit-btn" onclick="editLotBoundary('${lot.lotID}')">
             <i class="fas fa-draw-polygon"></i> Edit Boundary
@@ -334,6 +324,64 @@ function loadParkingLots() {
 }
 
 
+// Update the toggleReserved function
+function toggleReserved(lotID, checkbox) {
+  const isReserving = checkbox.checked;
+
+  fetch(`/get-spaces?lotID=${lotID}`)
+    .then((response) => response.json())
+    .then((spaces) => {
+      const updatePromises = spaces.map((space) => {
+        const updates = isReserving
+          ? {
+              parkingType: "Regular",
+              // No need to set originalType here, server will handle it
+            }
+          : {
+              parkingType: space.originalType || space.parkingType || "Regular",
+              originalType: null // Clear the originalType when unreserving
+            };
+
+        return fetch(`/update-space/${space.parkingSpaceID}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updates),
+        });
+      });
+
+      Promise.all(updatePromises)
+        .then(() => {
+          showPopup(
+            `Parking lot ${isReserving ? "reserved" : "unreserved"} successfully!`,
+            "success"
+          );
+          return fetch(`/update-lot-reserved/${lotID}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ isReserved: isReserving }),
+          });
+        })
+        .then(() => {
+          if (currentLotID === lotID) {
+            viewLot(lotID);
+          }
+        })
+        .catch((error) => {
+          console.error("Error updating spaces:", error);
+          checkbox.checked = !isReserving; // Revert checkbox state on error
+          showPopup("Error updating parking spaces", "error");
+        });
+    })
+    .catch((error) => {
+      console.error("Error fetching spaces:", error);
+      checkbox.checked = !checkbox.checked; // Revert checkbox state on error
+      showPopup("Error fetching parking spaces", "error");
+    });
+}
 
 // Add this new function
 function editLotBoundary(lotID) {
@@ -461,58 +509,12 @@ function initEditBoundaryPage(lotID) {
 
 // Cancel edit boundary
 async function cancelEdit() {
-  const confirmed = await showConfirmDialog("Are you sure you want to cancel? Any unsaved changes will be lost.");
+  const confirmed = await showConfirmDialog(
+    "Are you sure you want to cancel? Any unsaved changes will be lost."
+  );
   if (confirmed) {
-      window.location.href = "index.html";
+    window.location.href = "index.html";
   }
-}
-
-// Toggle reserved status for all spaces in a lot
-function toggleReserved(lotID) {
-  fetch(`/get-spaces?lotID=${lotID}`)
-    .then(response => response.json())
-    .then(spaces => {
-      // Check if any space is not Regular to determine the toggle state
-      const shouldReserve = spaces.some(space => space.parkingType !== 'Regular');
-      
-      // Update all spaces in the lot
-      const updatePromises = spaces.map(space => {
-        const updates = shouldReserve ? {
-          // When reserving, store original type and set to Regular
-          originalType: space.parkingType,
-          parkingType: 'Regular'
-        } : {
-          // When unreserving, restore original type if exists
-          parkingType: space.originalType || 'Regular',
-          originalType: null
-        };
-
-        return fetch(`/update-space/${space.parkingSpaceID}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(updates)
-        });
-      });
-
-      Promise.all(updatePromises)
-        .then(() => {
-          showPopup(`Parking lot ${shouldReserve ? 'reserved' : 'unreserved'} successfully!`, 'success');
-          // Refresh the view if currently viewing this lot
-          if (currentLotID === lotID) {
-            viewLot(lotID);
-          }
-        })
-        .catch(error => {
-          console.error('Error updating spaces:', error);
-          showPopup('Error updating parking spaces', 'error');
-        });
-    })
-    .catch(error => {
-      console.error('Error fetching spaces:', error);
-      showPopup('Error fetching parking spaces', 'error');
-    });
 }
 
 // View lot details
