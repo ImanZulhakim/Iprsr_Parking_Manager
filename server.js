@@ -535,25 +535,60 @@ app.get("/get-spaces", (req, res) => {
   });
 });
 
-// Update lot spaces count
-app.put('/update-lot-spaces/:lotID', async (req, res) => {
-  try {
-    const lotID = req.params.lotID;
-    // Count spaces for this lot
-    const [result] = await pool.query(
-      'SELECT COUNT(*) as count FROM parking_spaces WHERE lotID = ?', 
-      [lotID]
-    );
-    // Update lot with new count
-    await pool.query(
-      'UPDATE parking_lots SET spaces = ? WHERE lotID = ?',
-      [result[0].count, lotID]
-    );
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+app.put("/update-lot-spaces/:lotID", (req, res) => {
+  const lotID = req.params.lotID;
+
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error("Error starting transaction:", err);
+      return res.status(500).json({ error: "Transaction error" });
+    }
+
+    // Count the number of spaces for the given lot
+    const countSpacesQuery = "SELECT COUNT(*) as count FROM parkingspace WHERE lotID = ?";
+    db.query(countSpacesQuery, [lotID], (err, results) => {
+      if (err) {
+        console.error("Error counting parking spaces:", err);
+        return db.rollback(() => {
+          res.status(500).json({ error: "Database error while counting spaces" });
+        });
+      }
+
+      const spacesCount = results[0].count;
+
+      // Update the lot's spaces count
+      const updateLotQuery = "UPDATE parkinglot SET spaces = ? WHERE lotID = ?";
+      db.query(updateLotQuery, [spacesCount, lotID], (err, result) => {
+        if (err) {
+          console.error("Error updating lot spaces count:", err);
+          return db.rollback(() => {
+            res.status(500).json({ error: "Database error while updating spaces count" });
+          });
+        }
+
+        if (result.affectedRows === 0) {
+          return db.rollback(() => {
+            res.status(404).json({ error: "Lot ID not found" });
+          });
+        }
+
+        // Commit the transaction
+        db.commit((err) => {
+          if (err) {
+            console.error("Error committing transaction:", err);
+            return db.rollback(() => {
+              res.status(500).json({ error: "Transaction commit error" });
+            });
+          }
+
+          res.json({ success: true, message: `Spaces count updated for lotID: ${lotID}` });
+        });
+      });
+    });
+  });
 });
+
+
 
 // Update a parking space
 app.put("/update-space/:id", (req, res) => {
@@ -736,20 +771,6 @@ app.get("/get-parking-space/:id", (req, res) => {
       return;
     }
     res.json(results[0]);
-  });
-});
-
-// Update a parking space
-app.put("/update-space/:id", (req, res) => {
-  const { id } = req.params;
-  const updates = req.body;
-  const query = "UPDATE parkingspace SET ? WHERE parkingSpaceID = ?";
-  db.query(query, [updates, id], (err, result) => {
-    if (err) {
-      res.status(500).json({ message: "Error updating parking space" });
-      return;
-    }
-    res.json({ message: "Parking space updated successfully" });
   });
 });
 

@@ -96,7 +96,6 @@ function startDrawing() {
     });
 }
 
-
 // Initialize drawing map
 function initializeDrawingMap(lotID) {
   if (currentMap) {
@@ -319,18 +318,20 @@ function goBack() {
 // Load parking locations
 function loadParkingLocations() {
   fetch("/get-all-locations")
-      .then((response) => response.json())
-      .then((locations) => {
-          const locationsTableBody = document.querySelector("#locations-table tbody");
-          if (!locationsTableBody) {
-              console.error("Locations table body not found.");
-              return;
-          }
+    .then((response) => response.json())
+    .then((locations) => {
+      const locationsTableBody = document.querySelector(
+        "#locations-table tbody"
+      );
+      if (!locationsTableBody) {
+        console.error("Locations table body not found.");
+        return;
+      }
 
-          locationsTableBody.innerHTML = locations.length
-              ? locations
-                    .map(
-                        (location) => `
+      locationsTableBody.innerHTML = locations.length
+        ? locations
+            .map(
+              (location) => `
                   <tr data-location-id="${location.locationID}">
                       <td>${location.locationID}</td>
                       <td>${location.location_name}</td>
@@ -343,14 +344,14 @@ function loadParkingLocations() {
                           </button>
                       </td>
                   </tr>`
-                    )
-                    .join("")
-              : '<tr><td colspan="5">No parking locations available</td></tr>';
-      })
-      .catch((err) => {
-          console.error("Error loading parking locations:", err);
-          showPopup("Failed to load parking locations.", "error");
-      });
+            )
+            .join("")
+        : '<tr><td colspan="5">No parking locations available</td></tr>';
+    })
+    .catch((err) => {
+      console.error("Error loading parking locations:", err);
+      showPopup("Failed to load parking locations.", "error");
+    });
 }
 
 // Go to add location page
@@ -369,11 +370,10 @@ function goToAddLot() {
   }
 
   // Redirect to add-lot.html with the selected locationID
-  window.location.href = `add-lot.html?locationID=${encodeURIComponent(locationID)}`;
+  window.location.href = `add-lot.html?locationID=${encodeURIComponent(
+    locationID
+  )}`;
 }
-
-
-
 
 // Show parking lots when "View Lots" button is clicked
 function viewLots(locationID, locationName) {
@@ -391,13 +391,13 @@ function viewLots(locationID, locationName) {
     }
 
     // Save the locationID in the URL query parameters for persistence
-    const addLotButton = document.querySelector(
-      "#view-lots .add-btn"
-    );
+    const addLotButton = document.querySelector("#view-lots .add-btn");
     if (addLotButton) {
       addLotButton.setAttribute(
         "onclick",
-        `window.location.href='add-lot.html?locationID=${encodeURIComponent(locationID)}'`
+        `window.location.href='add-lot.html?locationID=${encodeURIComponent(
+          locationID
+        )}'`
       );
     }
 
@@ -405,9 +405,6 @@ function viewLots(locationID, locationName) {
     loadParkingLots(locationID);
   }
 }
-
-
-
 
 // Go back to Parking Locations
 function goBackToLocations() {
@@ -434,7 +431,6 @@ function goBackToLocations() {
     currentMap = null;
   }
 }
-
 
 // Load parking lots based on the selected location
 function loadParkingLots(locationID) {
@@ -1420,12 +1416,6 @@ function addParkingSpace() {
     return;
   }
 
-  // Add this validation
-  if (!parkingType || parkingType === "undefined") {
-    showPopup("Please select a valid parking type", "error");
-    return;
-  }
-
   const spaceData = {
     parkingSpaceID: spaceID,
     parkingType,
@@ -1439,10 +1429,7 @@ function addParkingSpace() {
     isPremium,
     isAvailable,
     lotID,
-    // Send coordinates as numbers, not string
-    coordinates: currentSpaceCoordinates
-      ? `${currentSpaceCoordinates.lat},${currentSpaceCoordinates.lng}`
-      : null,
+    coordinates,
   };
 
   fetch("/create-space", {
@@ -1458,18 +1445,21 @@ function addParkingSpace() {
       }
       return response.json();
     })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Failed to create parking space");
-      }
-      return response.json();
-    })
     .then((data) => {
       // Update parking lot spaces count
-      fetch(`/update-lot-spaces/${lotID}`, {
+      console.log("Updating spaces count for lotID:", lotID);
+
+      return fetch(`/update-lot-spaces/${lotID}`, {
         method: "PUT",
       });
-
+    })
+    .then((updateResponse) => {
+      if (!updateResponse.ok) {
+        throw new Error("Failed to update parking lot spaces count");
+      }
+      return updateResponse.json();
+    })
+    .then(() => {
       showPopup("Parking space added successfully!", "success");
       window.location.href = `index.html?lotID=${lotID}`;
     })
