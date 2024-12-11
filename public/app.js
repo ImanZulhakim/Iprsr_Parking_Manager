@@ -17,13 +17,13 @@ $(document).ready(function () {
     // Only try to show view-lots if we're on the index page
     const viewLotsElement = document.querySelector("#view-lots");
     if (viewLotsElement) {
-      viewLotsElement.style.display = "block";
-      const sectionTitle = document.getElementById("section-title");
-      if (sectionTitle) sectionTitle.textContent = "Home";
-
-      // Load parking lots on page load
-      loadParkingLots();
+      viewLotsElement.style.display = "none"; // Ensure Parking Lots section is hidden
     }
+    const sectionTitle = document.getElementById("section-title");
+    if (sectionTitle) sectionTitle.textContent = "Home";
+
+    // Load Parking Locations on page load
+    loadParkingLocations();
   });
 });
 
@@ -277,52 +277,168 @@ function performLotDeletion(lotID) {
     });
 }
 
-// Load parking lots
-function loadParkingLots() {
-  fetch("/get-all-lots")
+// Handle Add Location Form Submission
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("add-location-form");
+  if (form) {
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const locationID = document.getElementById("locationID").value;
+      const locationName = document.getElementById("locationName").value;
+      const district = document.getElementById("district").value;
+      const state = document.getElementById("state").value;
+
+      fetch("/add-location", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locationID, locationName, district, state }),
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Failed to save location");
+          return response.json();
+        })
+        .then((data) => {
+          alert("Location added successfully!");
+          window.location.href = "index.html"; // Redirect back to main page
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("Error adding location. Please try again.");
+        });
+    });
+  }
+});
+
+// Redirect to the previous page
+function goBack() {
+  window.location.href = "index.html";
+}
+
+
+
+// Load parking locations
+function loadParkingLocations() {
+  fetch("/get-all-locations")
+    .then((response) => response.json())
+    .then((locations) => {
+      const locationsTableBody = document.querySelector(
+        "#locations-table tbody"
+      );
+      if (!locationsTableBody) {
+        console.error("Locations table body not found.");
+        return;
+      }
+
+      // Populate table or display fallback
+      locationsTableBody.innerHTML = locations.length
+        ? locations
+            .map(
+              (location) => `
+          <tr>
+            <td>${location.locationID}</td>
+            <td>${location.location_name}</td>
+            <td>${location.district}</td>
+            <td>${location.state}</td>
+            <td>
+              <button class="action-btn view-btn" onclick="viewLots('${location.locationID}')">
+                <i class="fas fa-eye"></i> View Lots
+              </button>
+            </td>
+          </tr>`
+            )
+            .join("")
+        : '<tr><td colspan="5">No parking locations available</td></tr>';
+    })
+    .catch((err) => {
+      console.error("Error loading parking locations:", err);
+      showPopup("Failed to load parking locations.", "error");
+    });
+}
+
+// Show parking lots when "View Lots" button is clicked
+function viewLots(locationID) {
+  const locationsContainer = document.querySelector("#view-locations");
+  const lotsContainer = document.querySelector("#view-lots");
+
+  if (locationsContainer && lotsContainer) {
+    locationsContainer.style.display = "none"; // Hide Parking Locations table
+    lotsContainer.style.display = "block"; // Show Parking Lots table
+
+    // Call the function to load parking lots
+    loadParkingLots(locationID);
+  } else {
+    console.error("Error: Containers not found in the DOM.");
+  }
+}
+
+// Go back to Parking Locations
+function goBackToLocations() {
+  // Hide Parking Lots table
+  const lotsContainer = document.querySelector("#view-lots");
+  if (lotsContainer) lotsContainer.style.display = "none";
+
+  // Hide Parking Spaces table
+  const spacesContainer = document.querySelector("#parking-spaces-container");
+  if (spacesContainer) spacesContainer.style.display = "none";
+
+  // Hide the Map container
+  const mapContainer = document.querySelector("#view-map-container");
+  if (mapContainer) mapContainer.style.display = "none";
+
+  // Show Parking Locations table
+  const locationsContainer = document.querySelector("#view-locations");
+  if (locationsContainer) locationsContainer.style.display = "block";
+
+  // Clear map instance if exists
+  if (currentMap) {
+    currentMap.off();
+    currentMap.remove();
+    currentMap = null;
+  }
+}
+
+
+// Load parking lots based on the selected location
+function loadParkingLots(locationID) {
+  fetch(`/get-lots-by-location/${locationID}`)
     .then((response) => response.json())
     .then((lots) => {
       const lotsTableBody = document.querySelector("#lots-table tbody");
-      if (!lotsTableBody) return;
+      if (!lotsTableBody) {
+        console.error("Lots table body not found.");
+        return;
+      }
 
+      // Populate table or display fallback
       lotsTableBody.innerHTML = lots.length
         ? lots
             .map(
               (lot) => `
-      <tr>
-        <td>${lot.lotID}</td>
-        <td>${lot.location}</td>
-        <td>
-          <button class="action-btn view-btn" onclick="viewLot('${lot.lotID}')">
-            <i class="fas fa-eye"></i> View Spaces
-          </button>
-          <div class="toggle-container">
-              <input type="checkbox" id="toggle-${lot.lotID}" class="toggle-checkbox" onchange="toggleReserved('${lot.lotID}', this)">
-              <label for="toggle-${lot.lotID}" class="toggle-label">
-                  <div class="toggle-inner">
-                      <span class="reserve">RESERVE LOT</span>
-                  </div>
-                  <div class="toggle-switch"></div>
-              </label>
-          </div>
-          <button class="action-btn edit-btn" onclick="editLotBoundary('${lot.lotID}')">
-            <i class="fas fa-draw-polygon"></i> Edit Boundary
-          </button>
-          <button class="action-btn delete-btn" onclick="deleteParkingLot('${lot.lotID}')">
-            <i class="fas fa-trash"></i>
-          </button>
-        </td>
-      </tr>`
+          <tr>
+            <td>${lot.lotID}</td>
+            <td>${lot.lot_name}</td>
+            <td>
+              <button class="action-btn view-btn" onclick="viewSpaces('${lot.lotID}')">
+                <i class="fas fa-eye"></i> View Spaces
+              </button>
+              <button class="action-btn edit-btn" onclick="editLotBoundary('${lot.lotID}')">
+                <i class="fas fa-draw-polygon"></i> Edit Boundary
+              </button>
+              <button class="action-btn delete-btn" onclick="deleteParkingLot('${lot.lotID}')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>`
             )
             .join("")
         : '<tr><td colspan="3">No parking lots available</td></tr>';
     })
     .catch((err) => {
       console.error("Error loading parking lots:", err);
-      showPopup("Failed to load parking lots. " + err.message, "error");
+      showPopup("Failed to load parking lots.", "error");
     });
 }
-
 
 // Update the toggleReserved function
 function toggleReserved(lotID, checkbox) {
@@ -339,7 +455,7 @@ function toggleReserved(lotID, checkbox) {
             }
           : {
               parkingType: space.originalType || space.parkingType || "Regular",
-              originalType: null // Clear the originalType when unreserving
+              originalType: null, // Clear the originalType when unreserving
             };
 
         return fetch(`/update-space/${space.parkingSpaceID}`, {
@@ -354,7 +470,9 @@ function toggleReserved(lotID, checkbox) {
       Promise.all(updatePromises)
         .then(() => {
           showPopup(
-            `Parking lot ${isReserving ? "reserved" : "unreserved"} successfully!`,
+            `Parking lot ${
+              isReserving ? "reserved" : "unreserved"
+            } successfully!`,
             "success"
           );
           return fetch(`/update-lot-reserved/${lotID}`, {
@@ -367,7 +485,7 @@ function toggleReserved(lotID, checkbox) {
         })
         .then(() => {
           if (currentLotID === lotID) {
-            viewLot(lotID);
+            viewSpaces(lotID);
           }
         })
         .catch((error) => {
@@ -518,7 +636,7 @@ async function cancelEdit() {
 }
 
 // View lot details
-function viewLot(lotID) {
+function viewSpaces(lotID) {
   currentLotID = lotID;
 
   // Fetch parking spaces for the selected lot
@@ -1639,57 +1757,55 @@ function resetSpaceForm() {
 }
 
 // Load parking spaces
-function loadParkingSpaces() {
-  const lotID = document.getElementById("lotSelect").value;
-  if (!lotID) return;
-
-  // Regenerate space ID for the current lot
-  loadNextSpaceID(lotID);
-}
-
-// Load parking spaces based on lot ID
 function loadParkingSpaces(lotID) {
-  fetch(`/get-spaces/${lotID}`)
+  fetch(`/get-spaces?lotID=${lotID}`)
     .then((response) => response.json())
     .then((spaces) => {
       const tbody = document.querySelector("#spaces-table tbody");
-      tbody.innerHTML = "";
+      if (!tbody) {
+        console.error("Spaces table body not found.");
+        return;
+      }
 
-      spaces.forEach((space) => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${space.parkingSpaceID}</td>
-          <td>${space.parkingType || "Not Set"}</td>
-          <td>${space.isNearest ? "Yes" : "No"}</td>
-          <td>${space.isCovered ? "Yes" : "No"}</td>
-          <td>${space.isWheelchairAccessible ? "Yes" : "No"}</td>
-          <td>${space.hasLargeSpace ? "Yes" : "No"}</td>
-          <td>${space.isWellLitArea ? "Yes" : "No"}</td>
-          <td>${space.hasEVCharging ? "Yes" : "No"}</td>
-          <td>${space.isFamilyParkingArea ? "Yes" : "No"}</td>
-          <td>${space.isPremium ? "Yes" : "No"}</td>
-          <td>${space.lotID}</td>
-          <td>${space.isAvailable ? "Available" : "Not Available"}</td>
-          <td>${space.coordinates || "N/A"}</td>
-          <td>
-            <button onclick="editSpace('${
-              space.parkingSpaceID
-            }')" class="edit-btn">
-              <i class="fas fa-edit"></i> Edit
-            </button>
-            <button onclick="deleteSpace('${
-              space.parkingSpaceID
-            }')" class="delete-btn">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
+      // Populate table or display fallback
+      tbody.innerHTML = spaces.length
+        ? spaces
+            .map(
+              (space) => `
+          <tr>
+            <td>${space.parkingSpaceID}</td>
+            <td>${space.parkingType || "Not Set"}</td>
+            <td>${space.isNearest ? "Yes" : "No"}</td>
+            <td>${space.isCovered ? "Yes" : "No"}</td>
+            <td>${space.isWheelchairAccessible ? "Yes" : "No"}</td>
+            <td>${space.hasLargeSpace ? "Yes" : "No"}</td>
+            <td>${space.isWellLitArea ? "Yes" : "No"}</td>
+            <td>${space.hasEVCharging ? "Yes" : "No"}</td>
+            <td>${space.isFamilyParkingArea ? "Yes" : "No"}</td>
+            <td>${space.isPremium ? "Yes" : "No"}</td>
+            <td>${space.lotID}</td>
+            <td>${space.isAvailable ? "Available" : "Not Available"}</td>
+            <td>${space.coordinates || "N/A"}</td>
+            <td>
+              <button class="action-btn edit-btn" onclick="editSpace('${
+                space.parkingSpaceID
+              }')">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button class="action-btn delete-btn" onclick="deleteParkingSpace('${
+                space.parkingSpaceID
+              }')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>`
+            )
+            .join("")
+        : '<tr><td colspan="14">No parking spaces available</td></tr>';
     })
-    .catch((error) => {
-      console.error("Error loading parking spaces:", error);
-      showPopup("Failed to load parking spaces", "error");
+    .catch((err) => {
+      console.error("Error loading parking spaces:", err);
+      showPopup("Failed to load parking spaces.", "error");
     });
 }
 

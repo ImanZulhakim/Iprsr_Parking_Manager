@@ -35,6 +35,12 @@ app.get("/index.html", (req, res) => {
   res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
+// Add location page
+app.get("/add-location.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/add-location.html"));
+});
+
+
 // Edit space page
 app.get("/edit-space.html", (req, res) => {
   const spaceID = req.query.id; // Get the space ID from the query parameter
@@ -289,7 +295,7 @@ app.delete("/delete-lot/:lotID", (req, res) => {
 
 // Get all parking lots
 app.get("/get-all-lots", (req, res) => {
-  const query = "SELECT lotID, location FROM parkinglot";
+  const query = "SELECT lotID, lot_name FROM parkinglot";
   db.query(query, (err, results) => {
     if (err) {
       console.error("Error fetching parking lots:", err); // Log detailed error
@@ -300,6 +306,67 @@ app.get("/get-all-lots", (req, res) => {
     res.json(results);
   });
 });
+
+
+// Get all parking locations
+app.get("/get-all-locations", (req, res) => {
+  const query = "SELECT locationID, location_name, district, state FROM parkinglocation";
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Error fetching parking locations:", err);
+      res.status(500).json({ error: "Database error" });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+// Add location
+app.post("/add-location", (req, res) => {
+  const { locationID, locationName, district, state } = req.body;
+
+  if (!locationID || !locationName || !district || !state) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  const query = `
+    INSERT INTO parkinglocation (locationID, location_name, district, state)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.query(query, [locationID, locationName, district, state], (err, result) => {
+    if (err) {
+      console.error("Error adding location:", err);
+      res.status(500).json({ message: "Database error", error: err.message });
+      return;
+    }
+
+    res.json({ message: "Location added successfully!" });
+  });
+});
+
+
+// Get lots by location ID
+app.get("/get-lots-by-location/:locationID", (req, res) => {
+  const locationID = req.params.locationID;
+
+  if (!locationID) {
+    res.status(400).json({ error: "Location ID is required" });
+    return;
+  }
+
+  const query = "SELECT lotID, lot_name FROM parkinglot WHERE locationID = ?";
+  db.query(query, [locationID], (err, results) => {
+    if (err) {
+      console.error("Error fetching parking lots:", err);
+      res.status(500).json({ error: "Database error" });
+      return;
+    }
+    res.json(results);
+  });
+});
+
+
 
 // Get a parking lot
 app.get("/get-lot/:lotID", (req, res) => {

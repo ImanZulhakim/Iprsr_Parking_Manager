@@ -24,16 +24,40 @@
         <h2 id="section-title">IPRSR Management</h2>
       </div>
 
-      <!-- View Lots Section -->
+      <!-- Parking Locations Section -->
+      <div id="view-locations" class="section">
+        <div class="table-container">
+          <div class="table-header">
+            <div class="header-content">
+              <h3>Parking Locations</h3>
+              <button onclick="window.location.href='add-location.html'" class="add-btn">
+                <i class="fas fa-plus"></i> Add New Location
+              </button>
+            </div>
+          </div>
+          <table id="locations-table">
+            <thead>
+              <tr>
+                <th>Location ID</th>
+                <th>Location Name</th>
+                <th>District</th>
+                <th>State</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Parking Lots Section -->
       <div id="view-lots" class="section" style="display: none">
         <div class="table-container">
           <div class="table-header">
             <div class="header-content">
+              <button class="back-btn" onclick="goBackToLocations()">←</button>
               <h3>Parking Lots</h3>
-              <button
-                onclick="window.location.href='add-lot.html'"
-                class="add-btn"
-              >
+              <button onclick="window.location.href='add-lot.html'" class="action-btn add-btn">
                 <i class="fas fa-plus"></i> Add New Lot
               </button>
             </div>
@@ -42,15 +66,16 @@
             <thead>
               <tr>
                 <th>Lot ID</th>
-                <th>Location</th>
+                <th>Lot Name</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
         </div>
+      </div>
 
-        <!-- Map Container -->
+      <!-- Map Container -->
         <div id="view-map-container" style="display: none; height: 400px"></div>
       </div>
     </div>
@@ -103,7 +128,12 @@
       // Ensure that the first section loads correctly
       $(document).ready(function () {
         $("#navbar-placeholder").load("navbar.html", function () {
-          document.querySelector("#view-lots").style.display = "block";
+          // Ensure only the Parking Locations table is visible at startup
+          document.querySelector("#view-locations").style.display = "block"; // Show Parking Locations table
+          document.querySelector("#view-lots").style.display = "none"; // Hide Parking Lots table
+          document.querySelector("#parking-spaces-container").style.display =
+            "none"; // Hide Parking Spaces table
+          loadParkingLocations(); // Load parking locations on startup
         });
       });
     </script>
