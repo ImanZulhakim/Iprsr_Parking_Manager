@@ -190,11 +190,18 @@ app.post("/save-lot", (req, res) => {
 
 // API to create a new parking lot
 app.post("/create-lot", (req, res) => {
-  const { lotID, location } = req.body;
+  const { lotID, lot_name, locationID } = req.body;
+
+  if (!lotID || !lot_name || !locationID) {
+    res.status(400).json({
+      message: "Missing required fields: lotID, lot_name, or locationID",
+    });
+    return;
+  }
 
   const query =
-    "INSERT INTO parkinglot (lotID, location, spaces) VALUES (?, ?, 0)";
-  db.query(query, [lotID, location], (err, result) => {
+    "INSERT INTO parkinglot (lotID, lot_name, locationID, spaces) VALUES (?, ?, ?, 0)";
+  db.query(query, [lotID, lot_name, locationID], (err, result) => {
     if (err) {
       console.error("Error creating parking lot:", err);
       res.status(500).json({
@@ -206,6 +213,7 @@ app.post("/create-lot", (req, res) => {
     res.json({ message: `Parking lot ${lotID} created successfully!` });
   });
 });
+
 
 // Check if lot has spaces
 app.get("/check-lot-spaces/:lotID", (req, res) => {

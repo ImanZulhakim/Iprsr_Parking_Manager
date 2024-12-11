@@ -70,23 +70,23 @@ function initMap(containerId) {
 // Start drawing
 function startDrawing() {
   const lotID = document.getElementById("lotID").value;
-  const location = document.getElementById("lotName").value;
+  const locationName = document.getElementById("lotName").value;
+  const locationID = document.getElementById("hiddenLocationID").value;
 
-  if (!lotID || !location) {
-    showPopup("Please enter both Lot ID and Location Name first!", "error");
+  if (!lotID || !locationName || !locationID) {
+    alert("Please provide Lot ID and Location Name.");
     return;
   }
 
-  // Create the lot first
+  // Send request to create a new lot with locationID
   fetch("/create-lot", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lotID, location }),
+    body: JSON.stringify({ lotID, lot_name: locationName, locationID }), // Include locationID
   })
     .then((response) => response.json())
     .then((data) => {
       if (data.message) {
-        // Initialize drawing after lot is created
         initializeDrawingMap(lotID);
       }
     })
@@ -95,6 +95,7 @@ function startDrawing() {
       showPopup("Error creating parking lot. Please try again.", "error");
     });
 }
+
 
 // Initialize drawing map
 function initializeDrawingMap(lotID) {
@@ -188,22 +189,22 @@ function initializeDrawingMap(lotID) {
   });
 }
 
-// Create a new parking lot
-function createNewLot(lotID, location) {
-  fetch("/create-lot", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lotID, location }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.message) initializeDrawingMap(lotID);
-    })
-    .catch((err) => {
-      console.error("Error creating parking lot:", err);
-      showPopup("Error creating parking lot. Please try again.", "error");
-    });
-}
+// // Create a new parking lot
+// function createNewLot(lotID, lot_name, locationID) {
+//   fetch("/create-lot", {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ lotID, lot_name, locationID }),
+//   })
+//     .then((response) => response.json())
+//     .then((data) => {
+//       if (data.message) initializeDrawingMap(lotID);
+//     })
+//     .catch((err) => {
+//       console.error("Error creating parking lot:", err);
+//       showPopup("Error creating parking lot. Please try again.", "error");
+//     });
+// }
 
 // Delete parking lot
 async function deleteParkingLot(lotID) {
@@ -315,49 +316,67 @@ function goBack() {
   window.location.href = "index.html";
 }
 
-
-
 // Load parking locations
 function loadParkingLocations() {
   fetch("/get-all-locations")
-    .then((response) => response.json())
-    .then((locations) => {
-      const locationsTableBody = document.querySelector(
-        "#locations-table tbody"
-      );
-      if (!locationsTableBody) {
-        console.error("Locations table body not found.");
-        return;
-      }
+      .then((response) => response.json())
+      .then((locations) => {
+          const locationsTableBody = document.querySelector("#locations-table tbody");
+          if (!locationsTableBody) {
+              console.error("Locations table body not found.");
+              return;
+          }
 
-      // Populate table or display fallback
-      locationsTableBody.innerHTML = locations.length
-        ? locations
-            .map(
-              (location) => `
-          <tr>
-            <td>${location.locationID}</td>
-            <td>${location.location_name}</td>
-            <td>${location.district}</td>
-            <td>${location.state}</td>
-            <td>
-              <button class="action-btn view-btn" onclick="viewLots('${location.locationID}')">
-                <i class="fas fa-eye"></i> View Lots
-              </button>
-            </td>
-          </tr>`
-            )
-            .join("")
-        : '<tr><td colspan="5">No parking locations available</td></tr>';
-    })
-    .catch((err) => {
-      console.error("Error loading parking locations:", err);
-      showPopup("Failed to load parking locations.", "error");
-    });
+          locationsTableBody.innerHTML = locations.length
+              ? locations
+                    .map(
+                        (location) => `
+                  <tr data-location-id="${location.locationID}">
+                      <td>${location.locationID}</td>
+                      <td>${location.location_name}</td>
+                      <td>${location.district}</td>
+                      <td>${location.state}</td>
+                      <td>
+                          <!-- View Lots Button -->
+                          <button class="action-btn view-btn" onclick="viewLots('${location.locationID}', '${location.location_name}')">
+                              <i class="fas fa-eye"></i> View Lots
+                          </button>
+                      </td>
+                  </tr>`
+                    )
+                    .join("")
+              : '<tr><td colspan="5">No parking locations available</td></tr>';
+      })
+      .catch((err) => {
+          console.error("Error loading parking locations:", err);
+          showPopup("Failed to load parking locations.", "error");
+      });
 }
 
+// Go to add location page
+function goToAddLocation() {
+  // Redirect to add-location.html for creating a new parking location
+  window.location.href = "add-location.html";
+}
+
+// Go to add lot page
+function goToAddLot() {
+  // Retrieve the locationID from localStorage
+  const locationID = localStorage.getItem("currentLocationID");
+  if (!locationID) {
+    alert("Location ID is missing. Unable to add a lot.");
+    return;
+  }
+
+  // Redirect to add-lot.html with the selected locationID
+  window.location.href = `add-lot.html?locationID=${encodeURIComponent(locationID)}`;
+}
+
+
+
+
 // Show parking lots when "View Lots" button is clicked
-function viewLots(locationID) {
+function viewLots(locationID, locationName) {
   const locationsContainer = document.querySelector("#view-locations");
   const lotsContainer = document.querySelector("#view-lots");
 
@@ -365,12 +384,30 @@ function viewLots(locationID) {
     locationsContainer.style.display = "none"; // Hide Parking Locations table
     lotsContainer.style.display = "block"; // Show Parking Lots table
 
-    // Call the function to load parking lots
+    // Update the title dynamically
+    const lotsTitle = document.querySelector("#view-lots .table-header h3");
+    if (lotsTitle) {
+      lotsTitle.textContent = `Parking Lots for ${locationName}`;
+    }
+
+    // Save the locationID in the URL query parameters for persistence
+    const addLotButton = document.querySelector(
+      "#view-lots .add-btn"
+    );
+    if (addLotButton) {
+      addLotButton.setAttribute(
+        "onclick",
+        `window.location.href='add-lot.html?locationID=${encodeURIComponent(locationID)}'`
+      );
+    }
+
+    // Load parking lots for the selected location
     loadParkingLots(locationID);
-  } else {
-    console.error("Error: Containers not found in the DOM.");
   }
 }
+
+
+
 
 // Go back to Parking Locations
 function goBackToLocations() {

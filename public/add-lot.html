@@ -1,44 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IPRSR Management - Add Parking Lot</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-</head>
-<body>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"
+    />
+  </head>
+  <body>
     <div id="navbar-placeholder"></div>
 
     <div class="main-content">
-        <h2>Add New Parking Lot</h2>
-        <div class="lot-form">
-            <div class="form-group">
-                <label for="lotID">Lot ID:</label>
-                <input type="text" id="lotID" required>
-            </div>
-            <div class="form-group">
-                <label for="lotName">Location Name:</label>
-                <input type="text" id="lotName" required>
-            </div>
-            <div class="form-group">
-                <p class="instruction">After entering Lot ID and Location Name, click "Start Drawing" to define the parking lot boundaries on the map.</p>
-                <button type="button" onclick="startDrawing()" class="action-btn">Start Drawing</button>
-            </div>
-            <div id="map" style="height: 400px;"></div>
+      <h2>Add New Parking Lot</h2>
+      <div class="lot-form">
+        <div class="form-group">
+          <label for="lotID">Lot ID:</label>
+          <input type="text" id="lotID" required />
         </div>
+        <div class="form-group">
+          <label for="lotName">Location Name:</label>
+          <input type="text" id="lotName" required />
+          <input type="hidden" id="hiddenLocationID" value="" />
+        </div>
+        <div class="form-group">
+          <p class="instruction">
+            After entering Lot ID and Location Name, click "Start Drawing" to
+            define the parking lot boundaries on the map.
+          </p>
+          <button type="button" onclick="startDrawing()" class="action-btn">
+            Start Drawing
+          </button>
+        </div>
+        <div id="map" style="height: 400px"></div>
+      </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script>
-        $(document).ready(function() {
-            $("#navbar-placeholder").load("navbar.html");
-            initMap('map');
-        });
+      $(document).ready(function () {
+        $("#navbar-placeholder").load("navbar.html");
+        initMap("map");
+
+        // Get the locationID from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const locationID = urlParams.get("locationID");
+
+        if (!locationID) {
+          alert("Location ID is missing. Returning to the home page.");
+          window.location.href = "index.html";
+          return;
+        }
+
+        console.log("Location ID:", locationID);
+
+        // Store the locationID in a hidden input for use in startDrawing()
+        document.getElementById("hiddenLocationID").value = locationID;
+      });
     </script>
     <script src="app.js"></script>
-</body>
-</html> 
+  </body>
+</html>

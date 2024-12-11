@@ -30,9 +30,11 @@
           <div class="table-header">
             <div class="header-content">
               <h3>Parking Locations</h3>
-              <button onclick="window.location.href='add-location.html'" class="add-btn">
-                <i class="fas fa-plus"></i> Add New Location
-              </button>
+              <!-- Add New Location Button -->
+            <button onclick="goToAddLocation()" class="add-btn">
+              <i class="fas fa-plus"></i> Add New Location
+            </button>
+
             </div>
           </div>
           <table id="locations-table">
@@ -57,7 +59,7 @@
             <div class="header-content">
               <button class="back-btn" onclick="goBackToLocations()">←</button>
               <h3>Parking Lots</h3>
-              <button onclick="window.location.href='add-lot.html'" class="action-btn add-btn">
+              <button onclick="goToAddLot()" class="action-btn add-btn">
                 <i class="fas fa-plus"></i> Add New Lot
               </button>
             </div>
