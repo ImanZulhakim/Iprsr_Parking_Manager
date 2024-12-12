@@ -176,19 +176,29 @@ app.post("/add-lot", (req, res) => {
   // Insert into parkinglot table
   const query =
     "INSERT INTO parkinglot (lotID, lot_name, locationID, locationType, coordinates) VALUES (?, ?, ?, ?, ?)";
-  db.query(query, [lotID, lot_name, locationID, locationType, coordinates], (err, result) => {
-    if (err) {
-      console.error("Error creating parking lot:", err);
+  db.query(
+    query,
+    [lotID, lot_name, locationID, locationType, coordinates],
+    (err, result) => {
+      if (err) {
+        console.error("Error creating parking lot:", err);
 
-      // Handle duplicate entry error
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(409).json({ message: `Duplicate entry: Lot ID '${lotID}' already exists.` });
+        // Handle duplicate entry error
+        if (err.code === "ER_DUP_ENTRY") {
+          return res
+            .status(409)
+            .json({
+              message: `Duplicate entry: Lot ID '${lotID}' already exists.`,
+            });
+        }
+
+        return res
+          .status(500)
+          .json({ message: "Error creating parking lot", error: err.message });
       }
-
-      return res.status(500).json({ message: "Error creating parking lot", error: err.message });
+      res.json({ message: `Parking lot ${lotID} created successfully!` });
     }
-    res.json({ message: `Parking lot ${lotID} created successfully!` });
-  });
+  );
 });
 
 // Check if lot has spaces
@@ -345,7 +355,9 @@ app.delete("/delete-location/:locationID", (req, res) => {
   db.query(checkLocationQuery, [locationID], (err, results) => {
     if (err) {
       console.error("Error checking location:", err);
-      return res.status(500).json({ message: "Database error", error: err.message });
+      return res
+        .status(500)
+        .json({ message: "Database error", error: err.message });
     }
 
     if (results.length === 0) {
@@ -357,7 +369,9 @@ app.delete("/delete-location/:locationID", (req, res) => {
     db.query(deleteLocationQuery, [locationID], (err, result) => {
       if (err) {
         console.error("Error deleting location:", err);
-        return res.status(500).json({ message: "Database error", error: err.message });
+        return res
+          .status(500)
+          .json({ message: "Database error", error: err.message });
       }
 
       res.json({ message: "Location deleted successfully!" });
@@ -614,7 +628,7 @@ app.put("/update-space/:id", (req, res) => {
   // If we're reserving (changing to Regular), store the current type first
   if (updates.parkingType === "Regular") {
     db.query(
-      "SELECT parkingType FROM parkingspace WHERE parkingSpaceID = ?",
+      "SELECT parkingType, originalType FROM parkingspace WHERE parkingSpaceID = ?",
       [id],
       (err, results) => {
         if (err) {
@@ -622,8 +636,11 @@ app.put("/update-space/:id", (req, res) => {
           return;
         }
 
-        // Store the original type before updating to Regular
-        updates.originalType = results[0].parkingType;
+        // Check if originalType already exists
+        if (!results[0].originalType) {
+          // Store the original type before updating to Regular
+          updates.originalType = results[0].parkingType;
+        }
 
         // Now perform the update
         db.query(

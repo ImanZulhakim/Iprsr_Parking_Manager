@@ -570,6 +570,15 @@ function loadParkingLots(locationID) {
               <button class="action-btn view-btn" onclick="viewSpaces('${lot.lotID}')">
                 <i class="fas fa-eye"></i> View Spaces
               </button>
+              <div class="toggle-container">
+                  <input type="checkbox" id="toggle-${lot.lotID}" class="toggle-checkbox" onchange="toggleReserved('${lot.lotID}', this)">
+                  <label for="toggle-${lot.lotID}" class="toggle-label">
+                      <div class="toggle-inner">
+                          <span class="reserve">RESERVE LOT</span>
+                      </div>
+                      <div class="toggle-switch"></div>
+                  </label>
+              </div>
               <button class="action-btn edit-btn" onclick="editLotBoundary('${lot.lotID}')">
                 <i class="fas fa-draw-polygon"></i> Edit Boundary
               </button>
