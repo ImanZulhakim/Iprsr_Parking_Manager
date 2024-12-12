@@ -68,7 +68,7 @@ function initMap(containerId) {
 }
 
 // Start drawing
-function startDrawing() {
+function addParkingLot() {
   const lotID = document.getElementById("lotID").value;
   const locationName = document.getElementById("lotName").value;
   const locationID = document.getElementById("hiddenLocationID").value;
@@ -79,7 +79,7 @@ function startDrawing() {
   }
 
   // Send request to create a new lot with locationID
-  fetch("/create-lot", {
+  fetch("/add-lot", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ lotID, lot_name: locationName, locationID }), // Include locationID
@@ -87,7 +87,8 @@ function startDrawing() {
     .then((response) => response.json())
     .then((data) => {
       if (data.message) {
-        initializeDrawingMap(lotID);
+        showPopup(data.message, "success");
+        drawParkingLot(lotID);
       }
     })
     .catch((err) => {
@@ -96,8 +97,8 @@ function startDrawing() {
     });
 }
 
-// Initialize drawing map
-function initializeDrawingMap(lotID) {
+// Initialize drawing map to draw parking lot boundary
+function drawParkingLot(lotID) {
   if (currentMap) {
     currentMap.off();
     currentMap.remove();
@@ -155,22 +156,20 @@ function initializeDrawingMap(lotID) {
       .getLatLngs()[0]
       .map((coord) => [coord.lat, coord.lng]);
 
-    // Calculate center point for parkinglot coordinates
-    const centerLat =
-      coordinates.reduce((sum, coord) => sum + coord[0], 0) /
-      coordinates.length;
-    const centerLng =
-      coordinates.reduce((sum, coord) => sum + coord[1], 0) /
-      coordinates.length;
+    // Calculate the centroid (center) of the polygon
+    const [centerLat, centerLng] = calculateCentroid(coordinates);
+
+    // Format the center coordinates as a string
+    const centerCoordinatesString = `${centerLat},${centerLng}`;
 
     // Save both boundary and center coordinates
-    fetch("/save-lot", {
+    fetch("/add-lot-boundary", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         lotID,
-        coordinates,
-        centerCoordinates: [centerLat, centerLng],
+        coordinates, // Array of coordinates for parking_lot_boundaries
+        centerCoordinates: centerCoordinatesString, // String for parkinglot
       }),
     })
       .then(() => {
@@ -186,6 +185,23 @@ function initializeDrawingMap(lotID) {
         showPopup("Error saving boundary. Please try again.", "error");
       });
   });
+}
+
+// Calculate the centroid of the polygon
+function calculateCentroid(coordinates) {
+  let sumLat = 0;
+  let sumLng = 0;
+  const totalPoints = coordinates.length;
+
+  coordinates.forEach((coord) => {
+    sumLat += coord[0];
+    sumLng += coord[1];
+  });
+
+  const centerLat = sumLat / totalPoints;
+  const centerLng = sumLng / totalPoints;
+
+  return [centerLat, centerLng];
 }
 
 // // Create a new parking lot
@@ -1432,7 +1448,7 @@ function addParkingSpace() {
     coordinates,
   };
 
-  fetch("/create-space", {
+  fetch("/add-space", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1444,20 +1460,6 @@ function addParkingSpace() {
         throw new Error("Failed to create parking space");
       }
       return response.json();
-    })
-    .then((data) => {
-      // Update parking lot spaces count
-      console.log("Updating spaces count for lotID:", lotID);
-
-      return fetch(`/update-lot-spaces/${lotID}`, {
-        method: "PUT",
-      });
-    })
-    .then((updateResponse) => {
-      if (!updateResponse.ok) {
-        throw new Error("Failed to update parking lot spaces count");
-      }
-      return updateResponse.json();
     })
     .then(() => {
       showPopup("Parking space added successfully!", "success");
@@ -1656,21 +1658,22 @@ function startSpaceMarking() {
 }
 
 // Calculate lot center point
-function calculateLotCenterPoint(lotID) {
-  return fetch(`/get-lot-boundary/${lotID}`)
-    .then((response) => response.json())
-    .then((points) => {
-      if (!points || points.length === 0) return null;
+// function calculateLotCenterPoint(lotID) {
+//   return fetch(`/get-lot-boundary/${lotID}`)
+//     .then((response) => response.json())
+//     .then((points) => {
+//       if (!points || points.length === 0) return null;
 
-      const lats = points.map((p) => p.lat);
-      const lngs = points.map((p) => p.lng);
+//       const lats = points.map((p) => p.lat);
+//       const lngs = points.map((p) => p.lng);
 
-      const centerLat = (Math.max(...lats) + Math.min(...lats)) / 2;
-      const centerLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
+//       const centerLat = (Math.max(...lats) + Math.min(...lats)) / 2;
+//       const centerLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
 
-      return `${centerLat}, ${centerLng}`;
-    });
-}
+//       return `${centerLat}, ${centerLng}`;
+//     });
+// }
+
 
 // Load lot select
 function loadLotSelect() {
