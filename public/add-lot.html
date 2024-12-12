@@ -10,8 +10,14 @@
       href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
     />
     <link
-      rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"
     />
+    <!-- Leaflet Control Geocoder Plugin -->
+    <link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"
+/>
   </head>
   <body>
     <div id="navbar-placeholder"></div>
@@ -61,6 +67,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <!-- Leaflet Control Geocoder Plugin -->
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <script>
       $(document).ready(function () {
         $("#navbar-placeholder").load("navbar.html");
@@ -96,6 +104,7 @@
           }
         });
       });
+
     </script>
     <script src="app.js"></script>
   </body>

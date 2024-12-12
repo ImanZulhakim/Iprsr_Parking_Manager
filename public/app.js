@@ -164,7 +164,8 @@ function drawParkingLot(lotID) {
     currentMap.remove();
   }
 
-  currentMap = L.map("map").setView([6.4634, 100.5055], 17);
+  // Set the map to zoom to Malaysia
+  currentMap = L.map("map").setView([4.2105, 101.9758], 7); // Center on Malaysia with zoom level 7
 
   // Add satellite layer from Google
   const satelliteTile = L.tileLayer(
@@ -191,6 +192,27 @@ function drawParkingLot(lotID) {
     Streets: streets,
   };
   L.control.layers(baseMaps).addTo(currentMap);
+
+  // Create a custom geocoder
+const geocoder = L.Control.Geocoder.nominatim();
+
+// Add the geocoder control
+L.Control.geocoder({
+  geocoder: geocoder, // Use the custom geocoder
+  defaultMarkers: false, // Explicitly disable default markers
+  collapsed: false, // Keep the search bar expanded
+}).on('markgeocode', function (e) {
+  // Zoom to the searched location
+  const latlng = e.geocode.center;
+  currentMap.setView(latlng, 17); // Zoom in to the searched location
+
+  // Remove any existing markers
+  currentMap.eachLayer(function (layer) {
+    if (layer instanceof L.Marker) {
+      currentMap.removeLayer(layer);
+    }
+  });
+}).addTo(currentMap);
 
   drawnItems = new L.FeatureGroup();
   currentMap.addLayer(drawnItems);
@@ -260,23 +282,6 @@ function calculateCentroid(coordinates) {
   return [centerLat, centerLng];
 }
 
-// // Create a new parking lot
-// function createNewLot(lotID, lot_name, locationID) {
-//   fetch("/create-lot", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json" },
-//     body: JSON.stringify({ lotID, lot_name, locationID }),
-//   })
-//     .then((response) => response.json())
-//     .then((data) => {
-//       if (data.message) initializeDrawingMap(lotID);
-//     })
-//     .catch((err) => {
-//       console.error("Error creating parking lot:", err);
-//       showPopup("Error creating parking lot. Please try again.", "error");
-//     });
-// }
-
 // Delete parking lot
 async function deleteParkingLot(lotID) {
   try {
@@ -318,7 +323,7 @@ function performLotDeletion(lotID) {
     })
     .then((data) => {
       showPopup(data.message, "success");
-      loadParkingLots(); // Refresh lots list
+      viewSpaces(lotID); // Refresh lots list
 
       // Clear and hide parking spaces table
       const spacesContainer = document.querySelector(
@@ -371,8 +376,10 @@ document.addEventListener("DOMContentLoaded", function () {
           return response.json();
         })
         .then((data) => {
-          alert("Location added successfully!");
-          window.location.href = "index.html"; // Redirect back to main page
+          showPopup(data.message, "success");
+          setTimeout(() => {
+            window.location.href = "index.html"; // Redirect back to the main page
+          }, 2000);
         })
         .catch((error) => {
           console.error("Error:", error);
@@ -1467,7 +1474,6 @@ function createCustomMarker(color) {
   });
 }
 
-// Add new parking space
 // Add new parking space
 function addParkingSpace() {
   const spaceID = document.getElementById("spaceID").value;
