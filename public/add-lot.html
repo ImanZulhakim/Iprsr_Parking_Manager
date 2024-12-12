@@ -10,8 +10,7 @@
       href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
     />
     <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"
+      rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"
     />
   </head>
   <body>
@@ -30,6 +29,14 @@
           <input type="hidden" id="hiddenLocationID" value="" />
         </div>
         <div class="form-group">
+          <label for="locationType">Location Type:</label>
+          <select id="locationType" required>
+            <option value="">Select Location Type</option>
+            <option value="outdoor">Outdoor</option>
+            <option value="indoor">Indoor</option>
+          </select>
+        </div>
+        <div id="outdoor-section" style="display: none;">
           <p class="instruction">
             After entering Lot ID and Location Name, click "Start Drawing" to
             define the parking lot boundaries on the map.
@@ -37,8 +44,17 @@
           <button type="button" onclick="addParkingLot()" class="action-btn">
             Start Drawing
           </button>
+          <div id="map" style="height: 400px"></div>
         </div>
-        <div id="map" style="height: 400px"></div>
+        <div id="indoor-section" style="display: none;">
+          <div class="form-group">
+            <label for="floorLevel">Floor/Level:</label>
+            <input type="text" id="floorLevel" required />
+          </div>
+          <button type="button" onclick="addIndoorParkingLot()" class="action-btn">
+            Add Indoor Parking Lot
+          </button>
+        </div>
       </div>
     </div>
 
@@ -64,6 +80,21 @@
 
         // Store the locationID in a hidden input for use in startDrawing()
         document.getElementById("hiddenLocationID").value = locationID;
+
+        // Show/hide sections based on location type selection
+        document.getElementById("locationType").addEventListener("change", function () {
+          const locationType = this.value;
+          if (locationType === "outdoor") {
+            document.getElementById("outdoor-section").style.display = "block";
+            document.getElementById("indoor-section").style.display = "none";
+          } else if (locationType === "indoor") {
+            document.getElementById("outdoor-section").style.display = "none";
+            document.getElementById("indoor-section").style.display = "block";
+          } else {
+            document.getElementById("outdoor-section").style.display = "none";
+            document.getElementById("indoor-section").style.display = "none";
+          }
+        });
       });
     </script>
     <script src="app.js"></script>

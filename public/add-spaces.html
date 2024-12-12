@@ -12,7 +12,6 @@
     <div id="navbar-placeholder"></div>
 
     <div class="main-content">
-        
         <div class="space-form-container">
             <h2>Add New Parking Space</h2>
             <form id="addSpaceForm" onsubmit="event.preventDefault(); addParkingSpace();">
@@ -50,7 +49,8 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <!-- Conditionally show/hide the "Mark Space Location" feature -->
+                <div id="mark-space-location" class="form-group" style="display: none;">
                     <label>Mark Space Location:</label>
                     <button type="button" onclick="startSpaceMarking()" class="action-btn">
                         <i class="fas fa-map-marker-alt"></i> Mark on Map
@@ -75,9 +75,10 @@
         $(document).ready(function() {
             $("#navbar-placeholder").load("navbar.html");
             
-            // Get lotID from URL parameters
+            // Get lotID and locationType from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const lotID = urlParams.get('lotID');
+            const locationType = urlParams.get('locationType');
             
             if (!lotID) {
                 alert('No lot ID specified');
@@ -90,7 +91,16 @@
             
             // Generate space ID immediately
             loadNextSpaceID(lotID);
+
+            // Conditionally show/hide the "Mark Space Location" feature
+            if (locationType === 'outdoor') {
+                document.getElementById('mark-space-location').style.display = 'block';
+                document.getElementById('space-map').style.display = 'block';
+            } else {
+                document.getElementById('mark-space-location').style.display = 'none';
+                document.getElementById('space-map').style.display = 'none';
+            }
         });
     </script>
 </body>
-</html> 
+</html>

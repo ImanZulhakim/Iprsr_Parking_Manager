@@ -167,25 +167,25 @@ app.post("/add-lot-boundary", (req, res) => {
 
 // API to add a new parking lot
 app.post("/add-lot", (req, res) => {
-  const { lotID, lot_name, locationID } = req.body;
+  const { lotID, lot_name, locationID, locationType, coordinates } = req.body;
 
-  if (!lotID || !lot_name || !locationID) {
-    res.status(400).json({
-      message: "Missing required fields: lotID, lot_name, or locationID",
-    });
-    return;
+  if (!lotID || !lot_name || !locationID || !locationType) {
+    return res.status(400).json({ message: "Missing required fields" });
   }
 
+  // Insert into parkinglot table
   const query =
-    "INSERT INTO parkinglot (lotID, lot_name, locationID, spaces) VALUES (?, ?, ?, 0)";
-  db.query(query, [lotID, lot_name, locationID], (err, result) => {
+    "INSERT INTO parkinglot (lotID, lot_name, locationID, locationType, coordinates) VALUES (?, ?, ?, ?, ?)";
+  db.query(query, [lotID, lot_name, locationID, locationType, coordinates], (err, result) => {
     if (err) {
       console.error("Error creating parking lot:", err);
-      res.status(500).json({
-        message: "Error creating parking lot",
-        error: err.message,
-      });
-      return;
+
+      // Handle duplicate entry error
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.status(409).json({ message: `Duplicate entry: Lot ID '${lotID}' already exists.` });
+      }
+
+      return res.status(500).json({ message: "Error creating parking lot", error: err.message });
     }
     res.json({ message: `Parking lot ${lotID} created successfully!` });
   });
@@ -358,7 +358,7 @@ app.get("/get-lots-by-location/:locationID", (req, res) => {
 
 // Get a parking lot by lotID
 app.get("/get-lot/:lotID", (req, res) => {
-  const query = "SELECT lotID, location FROM parkinglot WHERE lotID = ?";
+  const query = "SELECT * FROM parkinglot WHERE lotID = ?";
   db.query(query, [req.params.lotID], (err, results) => {
     if (err) {
       console.error("Error fetching parking lot:", err);

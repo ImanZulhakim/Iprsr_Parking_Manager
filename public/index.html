@@ -83,45 +83,45 @@
     </div>
 
     <!-- Parking Spaces Section -->
-    <div
-      id="parking-spaces-container"
-      class="table-container"
-      style="display: none"
+<div
+id="parking-spaces-container"
+class="table-container"
+style="display: none"
+>
+<div class="table-header">
+  <div class="header-content">
+    <h3>Parking Spaces - <span id="current-lot-location"></span></h3>
+    <button
+      onclick="window.location.href='add-spaces.html?lotID=' + encodeURIComponent(currentLotID) + '&locationType=' + encodeURIComponent(currentLocationType)"
+      class="add-btn"
     >
-      <div class="table-header">
-        <div class="header-content">
-          <h3>Parking Spaces - <span id="current-lot-location"></span></h3>
-          <button
-            onclick="window.location.href='add-spaces.html?lotID=' + encodeURIComponent(currentLotID)"
-            class="add-btn"
-          >
-            <i class="fas fa-plus"></i> Add New Space
-          </button>
-        </div>
-      </div>
-      <table id="spaces-table">
-        <thead>
-          <tr>
-            <th>Space ID</th>
-            <th>Type</th>
-            <th>Nearest</th>
-            <th>Covered</th>
-            <th>Wheelchair</th>
-            <th>Large</th>
-            <th>Well Lit</th>
-            <th>EV</th>
-            <th>Family</th>
-            <th>Premium</th>
-            <th>Lot ID</th>
-            <th>Status</th>
-            <th>Location</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div id="paginationControls" class="pagination-controls"></div>
-    </div>
+      <i class="fas fa-plus"></i> Add New Space
+    </button>
+  </div>
+</div>
+<table id="spaces-table">
+  <thead>
+    <tr>
+      <th>Space ID</th>
+      <th>Type</th>
+      <th>Nearest</th>
+      <th>Covered</th>
+      <th>Wheelchair</th>
+      <th>Large</th>
+      <th>Well Lit</th>
+      <th>EV</th>
+      <th>Family</th>
+      <th>Premium</th>
+      <th>Lot ID</th>
+      <th>Status</th>
+      <th>Location</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<div id="paginationControls" class="pagination-controls"></div>
+</div>
 
     <!-- External Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

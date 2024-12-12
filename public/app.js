@@ -10,6 +10,7 @@ let currentMarker = null;
 let currentSpaceCoordinates = null;
 let editSpaceMap = null;
 let editSpaceMarker = null;
+let currentLocationType = null;
 
 // Document ready
 $(document).ready(function () {
@@ -67,38 +68,97 @@ function initMap(containerId) {
   return currentMap;
 }
 
-// Start drawing
+// Add parking lot (Outdoor)
 function addParkingLot() {
   const lotID = document.getElementById("lotID").value;
   const locationName = document.getElementById("lotName").value;
   const locationID = document.getElementById("hiddenLocationID").value;
+  const locationType = document.getElementById("locationType").value;
 
-  if (!lotID || !locationName || !locationID) {
-    alert("Please provide Lot ID and Location Name.");
+  if (!lotID || !locationName || !locationID || locationType !== "outdoor") {
+    alert("Please provide Lot ID, Location Name, and ensure Location Type is Outdoor.");
     return;
   }
 
-  // Send request to create a new lot with locationID
+  // Send request to create a new outdoor lot
   fetch("/add-lot", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lotID, lot_name: locationName, locationID }), // Include locationID
+    body: JSON.stringify({ lotID, lot_name: locationName, locationID, locationType }),
   })
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((err) => {
+          throw new Error(err.message || "Error creating parking lot");
+        });
+      }
+      return response.json();
+    })
     .then((data) => {
       if (data.message) {
-        showPopup(data.message, "success");
+        showPopup("Outdoor parking lot added successfully!", "success");
         drawParkingLot(lotID);
       }
     })
     .catch((err) => {
       console.error("Error creating parking lot:", err);
-      showPopup("Error creating parking lot. Please try again.", "error");
+      showPopup(`Error creating parking lot: ${err.message}`, "error");
     });
 }
 
+// Add indoor parking lot
+function addIndoorParkingLot() {
+  const lotID = document.getElementById("lotID").value;
+  const locationName = document.getElementById("lotName").value;
+  const locationID = document.getElementById("hiddenLocationID").value;
+  const locationType = document.getElementById("locationType").value;
+  const floorLevel = document.getElementById("floorLevel").value;
+
+  if (!lotID || !locationName || !locationID || locationType !== "indoor" || !floorLevel) {
+    alert("Please provide Lot ID, Location Name, Floor/Level, and ensure Location Type is Indoor.");
+    return;
+  }
+
+  // For indoor lots, the coordinates will be the floorLevel
+  const coordinates = floorLevel;
+
+  // Send request to create a new indoor lot
+  fetch("/add-lot", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lotID, lot_name: locationName, locationID, locationType, coordinates }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((err) => {
+          throw new Error(err.message || "Error creating indoor parking lot");
+        });
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (data.message) {
+        showPopup("Indoor parking lot added successfully!", "success");
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 2000);
+      }
+    })
+    .catch((err) => {
+      console.error("Error creating indoor parking lot:", err);
+      showPopup(`Error creating indoor parking lot: ${err.message}`, "error");
+    });
+}
 // Initialize drawing map to draw parking lot boundary
 function drawParkingLot(lotID) {
+  const locationType = document.getElementById("locationType").value;
+
+  if (locationType === "indoor") {
+    // Indoor lots don't need to draw on the map
+    return;
+  }
+
+  // Outdoor lot logic (same as before)
   if (currentMap) {
     currentMap.off();
     currentMap.remove();
@@ -156,29 +216,25 @@ function drawParkingLot(lotID) {
       .getLatLngs()[0]
       .map((coord) => [coord.lat, coord.lng]);
 
-    // Calculate the centroid (center) of the polygon
     const [centerLat, centerLng] = calculateCentroid(coordinates);
 
-    // Format the center coordinates as a string
     const centerCoordinatesString = `${centerLat},${centerLng}`;
 
-    // Save both boundary and center coordinates
     fetch("/add-lot-boundary", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         lotID,
-        coordinates, // Array of coordinates for parking_lot_boundaries
-        centerCoordinates: centerCoordinatesString, // String for parkinglot
+        coordinates,
+        centerCoordinates: centerCoordinatesString,
       }),
     })
       .then(() => {
         showPopup("Parking lot boundary saved successfully!", "success");
         drawnItems.addLayer(layer);
-        // Add delay before redirect
         setTimeout(() => {
           window.location.href = "index.html";
-        }, 2000); // Wait 2 seconds before redirecting
+        }, 2000);
       })
       .catch((err) => {
         console.error("Error saving boundary:", err);
@@ -706,10 +762,30 @@ function viewSpaces(lotID) {
       createPaginationControls();
 
       // Show containers
-      document.querySelector("#parking-spaces-container").style.display =
-        "block";
-      const mapContainer = document.querySelector("#view-map-container");
-      mapContainer.style.display = "block";
+      document.querySelector("#parking-spaces-container").style.display = "block";
+
+      // Fetch the lot details to get the locationType
+      fetch(`/get-lot/${lotID}`)
+        .then((response) => response.json())
+        .then((lot) => {
+          // Set the currentLocationType
+          currentLocationType = lot.locationType;
+
+          // Update the title dynamically
+          document.getElementById("current-lot-location").textContent = lot.lot_name;
+
+          // Toggle map container visibility based on locationType
+          const mapContainer = document.getElementById("view-map-container");
+          if (currentLocationType === "outdoor") {
+            mapContainer.style.display = "block"; // Show the map for outdoor lots
+          } else {
+            mapContainer.style.display = "none"; // Hide the map for indoor lots
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching lot details:", err);
+          showPopup("Failed to load lot details.", "error");
+        });
 
       // Initialize map
       if (currentMap) {
@@ -1392,6 +1468,7 @@ function createCustomMarker(color) {
 }
 
 // Add new parking space
+// Add new parking space
 function addParkingSpace() {
   const spaceID = document.getElementById("spaceID").value;
   const parkingType = document.getElementById("parkingType").value;
@@ -1418,17 +1495,24 @@ function addParkingSpace() {
     : 0;
   const isPremium = document.getElementById("isPremium").checked ? 1 : 0;
   const isAvailable = 1;
-  const coordinates = currentSpaceCoordinates
-    ? `${currentSpaceCoordinates.lat.toFixed(
-        6
-      )}, ${currentSpaceCoordinates.lng.toFixed(6)}`
-    : "N/A";
 
-  if (!spaceID || !parkingType || !lotID || !currentSpaceCoordinates) {
-    showPopup(
-      "Please complete all fields and mark a location on the map.",
-      "error"
-    );
+  // Get locationType from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const locationType = urlParams.get('locationType');
+
+  let coordinates = "N/A"; // Default for indoor spaces
+
+  if (locationType === 'outdoor') {
+    // For outdoor spaces, get coordinates from the map
+    if (!currentSpaceCoordinates) {
+      showPopup("Please mark the space location on the map.", "error");
+      return;
+    }
+    coordinates = `${currentSpaceCoordinates.lat.toFixed(6)}, ${currentSpaceCoordinates.lng.toFixed(6)}`;
+  }
+
+  if (!spaceID || !parkingType || !lotID) {
+    showPopup("Please complete all fields.", "error");
     return;
   }
 
