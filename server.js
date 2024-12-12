@@ -336,6 +336,35 @@ app.post("/add-location", (req, res) => {
   );
 });
 
+// Delete parking location
+app.delete("/delete-location/:locationID", (req, res) => {
+  const { locationID } = req.params;
+
+  // Check if the location exists
+  const checkLocationQuery = `SELECT * FROM parkinglocation WHERE locationID = ?`;
+  db.query(checkLocationQuery, [locationID], (err, results) => {
+    if (err) {
+      console.error("Error checking location:", err);
+      return res.status(500).json({ message: "Database error", error: err.message });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Location not found" });
+    }
+
+    // Delete the location
+    const deleteLocationQuery = `DELETE FROM parkinglocation WHERE locationID = ?`;
+    db.query(deleteLocationQuery, [locationID], (err, result) => {
+      if (err) {
+        console.error("Error deleting location:", err);
+        return res.status(500).json({ message: "Database error", error: err.message });
+      }
+
+      res.json({ message: "Location deleted successfully!" });
+    });
+  });
+});
+
 // Get all parking lots by location ID
 app.get("/get-lots-by-location/:locationID", (req, res) => {
   const locationID = req.params.locationID;

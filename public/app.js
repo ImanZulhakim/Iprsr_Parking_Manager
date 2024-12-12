@@ -421,6 +421,10 @@ function loadParkingLocations() {
                           <button class="action-btn view-btn" onclick="viewLots('${location.locationID}', '${location.location_name}')">
                               <i class="fas fa-eye"></i> View Lots
                           </button>
+                          <!-- Delete Location Button -->
+                          <button class="action-btn delete-btn" onclick="deleteParkingLocation('${location.locationID}')">
+                              <i class="fas fa-trash"></i>
+                          </button>
                       </td>
                   </tr>`
             )
@@ -437,6 +441,38 @@ function loadParkingLocations() {
 function goToAddLocation() {
   // Redirect to add-location.html for creating a new parking location
   window.location.href = "add-location.html";
+}
+
+// Delete parking location
+async function deleteParkingLocation(locationID) {
+  try {
+    // Confirm deletion with the user
+    const confirmDelete = await showConfirmDialog(
+      "Are you sure you want to delete this parking location? This action cannot be undone."
+    );
+
+    if (!confirmDelete) return; // If user cancels, do nothing
+
+    // Send DELETE request to the server
+    const response = await fetch(`/delete-location/${locationID}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Show success message
+    showPopup(data.message, "success");
+
+    // Refresh the parking locations list
+    loadParkingLocations();
+  } catch (error) {
+    console.error("Error deleting parking location:", error);
+    showPopup("Error deleting parking location. Please try again.", "error");
+  }
 }
 
 // Go to add lot page
