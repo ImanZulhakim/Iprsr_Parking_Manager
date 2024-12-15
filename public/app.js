@@ -245,14 +245,14 @@ function initIndoorMap() {
   L.control.layers(baseMaps).addTo(currentMap);
 
   // Add click handler for marker placement
-  currentMap.on("click", function(e) {
+  currentMap.on("click", function (e) {
     if (currentMarker) {
       currentMap.removeLayer(currentMarker);
     }
     currentMarker = L.marker(e.latlng).addTo(currentMap);
     currentSpaceCoordinates = {
       lat: e.latlng.lat.toFixed(6),
-      lng: e.latlng.lng.toFixed(6)
+      lng: e.latlng.lng.toFixed(6),
     };
   });
 
@@ -282,7 +282,10 @@ function saveIndoorParkingLot() {
   const locationID = document.getElementById("hiddenLocationID").value;
 
   if (!lotID || !locationName || !locationID || !currentSpaceCoordinates) {
-    showPopup("Please fill all fields and mark the location on the map.", "error");
+    showPopup(
+      "Please fill all fields and mark the location on the map.",
+      "error"
+    );
     return;
   }
 
@@ -296,27 +299,27 @@ function saveIndoorParkingLot() {
       lot_name: locationName,
       locationID,
       locationType: "indoor",
-      coordinates
+      coordinates,
     }),
   })
-  .then(response => {
-    if (!response.ok) {
-      return response.json().then(err => {
-        throw new Error(err.message || "Error creating indoor parking lot");
-      });
-    }
-    return response.json();
-  })
-  .then(data => {
-    showPopup("Indoor parking lot added successfully!", "success");
-    setTimeout(() => {
-      window.location.href = "index.html";
-    }, 2000);
-  })
-  .catch(err => {
-    console.error("Error creating indoor parking lot:", err);
-    showPopup(`Error creating indoor parking lot: ${err.message}`, "error");
-  });
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((err) => {
+          throw new Error(err.message || "Error creating indoor parking lot");
+        });
+      }
+      return response.json();
+    })
+    .then((data) => {
+      showPopup("Indoor parking lot added successfully!", "success");
+      setTimeout(() => {
+        window.location.href = "index.html";
+      }, 2000);
+    })
+    .catch((err) => {
+      console.error("Error creating indoor parking lot:", err);
+      showPopup(`Error creating indoor parking lot: ${err.message}`, "error");
+    });
 }
 
 // Start drawing for outdoor parking lot
@@ -341,7 +344,9 @@ function saveOutdoorParkingLot() {
   }
 
   const layer = drawnItems.getLayers()[0];
-  const coordinates = layer.getLatLngs()[0].map((coord) => [coord.lat, coord.lng]);
+  const coordinates = layer
+    .getLatLngs()[0]
+    .map((coord) => [coord.lat, coord.lng]);
   const [centerLat, centerLng] = calculateCentroid(coordinates);
 
   const lotID = document.getElementById("lotID").value;
@@ -357,34 +362,34 @@ function saveOutdoorParkingLot() {
       lot_name: locationName,
       locationID,
       locationType: "outdoor",
-      coordinates: `${centerLat},${centerLng}`
+      coordinates: `${centerLat},${centerLng}`,
     }),
   })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error("Failed to save lot details");
-    }
-    // Then save the boundary
-    return fetch("/add-lot-boundary", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        lotID,
-        coordinates,
-        centerCoordinates: `${centerLat},${centerLng}`,
-      }),
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to save lot details");
+      }
+      // Then save the boundary
+      return fetch("/add-lot-boundary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lotID,
+          coordinates,
+          centerCoordinates: `${centerLat},${centerLng}`,
+        }),
+      });
+    })
+    .then(() => {
+      showPopup("Parking lot saved successfully!", "success");
+      setTimeout(() => {
+        window.location.href = "index.html";
+      }, 2000);
+    })
+    .catch((err) => {
+      console.error("Error saving parking lot:", err);
+      showPopup("Error saving parking lot. Please try again.", "error");
     });
-  })
-  .then(() => {
-    showPopup("Parking lot saved successfully!", "success");
-    setTimeout(() => {
-      window.location.href = "index.html";
-    }, 2000);
-  })
-  .catch((err) => {
-    console.error("Error saving parking lot:", err);
-    showPopup("Error saving parking lot. Please try again.", "error");
-  });
 }
 
 // Delete parking lot
@@ -1762,6 +1767,15 @@ function addParkingSpace() {
     coordinates = `${currentSpaceCoordinates.lat.toFixed(
       6
     )}, ${currentSpaceCoordinates.lng.toFixed(6)}`;
+  } else {
+    // For indoor spaces, use floor/level information
+    const levelType = document.getElementById("levelType").value;
+    const levelNumber = document.getElementById("levelNumber").value;
+    if (!levelType || !levelNumber) {
+      showPopup("Please select floor/level type and enter number.", "error");
+      return;
+    }
+    coordinates = `${levelType} ${levelNumber}`;
   }
 
   if (!spaceID || !parkingType || !lotID) {
