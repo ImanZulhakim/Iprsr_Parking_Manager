@@ -853,7 +853,7 @@ function initEditBoundaryPage(lotID) {
     .then((lot) => {
       // Update form fields with lot details
       document.getElementById("lotID").value = lot.lotID;
-      document.getElementById("lotName").value = lot.location;
+      document.getElementById("lotName").value = lot.lot_name;
 
       // Initialize map
       if (currentMap) {
