@@ -319,7 +319,7 @@ function saveIndoorParkingLot() {
     .then((data) => {
       showPopup("Indoor parking lot added successfully!", "success");
       setTimeout(() => {
-        window.location.href = "index.html";
+        window.location.href = `lots-and-spaces.html?locationID=${locationID}`;
       }, 2000);
     })
     .catch((err) => {
@@ -389,7 +389,7 @@ function saveOutdoorParkingLot() {
     .then(() => {
       showPopup("Parking lot saved successfully!", "success");
       setTimeout(() => {
-        window.location.href = "lots-and-spaces.html";
+        window.location.href = `lots-and-spaces.html?locationID=${locationID}`;
       }, 2000);
     })
     .catch((err) => {
