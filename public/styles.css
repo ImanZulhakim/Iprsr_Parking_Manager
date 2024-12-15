@@ -43,15 +43,62 @@ body {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Main content styles */
-.main-content {
+/* Scoped styles for index.html */
+.index-page .main-content {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+  }
+  
+  .index-page .table-container {
+    margin: 20px auto;
+    overflow-x: auto;
+  }
+  
+  .index-page h2 {
+    font-size: 2rem;
+    color: #0077B6;
+  }
+  
+  .index-page table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+  }
+  
+  .index-page th,
+  .index-page td {
+    padding: 12px 15px;
+    text-align: center;
+  }
+  
+  .index-page .add-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+  }
+  
+  .index-page .add-btn:hover {
+    background-color: #218838;
+  }
+
+  
+/* Main content styles */
+.main-content {
+    max-width: 800px; /* Align width of content */
+    margin: 2rem auto; /* Center content horizontally */
+    padding: 20px; /* Add padding */
 }
 
+/* Title alignment */
 .main-content h2 {
-    margin-bottom: 20px;
+    text-align: left; /* Align title to the left */
+    margin-bottom: 1.5rem; /* Add space below the title */
+    font-size: 2rem; /* Adjust font size */
+    color: #333; /* Title color */
 }
 
 /* Dashboard styles */
@@ -288,23 +335,35 @@ h3 {
 
 /* Form styles */
 
+/* Form container alignment */
 .form-container {
     background: white;
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    max-width: 800px;
-    margin: 2rem auto;
+    width: 100%; /* Full width inside parent container */
+    box-sizing: border-box; /* Prevent content overflow */
 }
 
+/* Align form fields */
 .form-group {
     margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
 }
 
 .form-group label {
-    display: block;
     margin-bottom: 0.5rem;
     font-weight: bold;
+    color: #555;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
 }
 
 .form-control {

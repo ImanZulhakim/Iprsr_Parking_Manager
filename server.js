@@ -185,11 +185,9 @@ app.post("/add-lot", (req, res) => {
 
         // Handle duplicate entry error
         if (err.code === "ER_DUP_ENTRY") {
-          return res
-            .status(409)
-            .json({
-              message: `Duplicate entry: Lot ID '${lotID}' already exists.`,
-            });
+          return res.status(409).json({
+            message: `Duplicate entry: Lot ID '${lotID}' already exists.`,
+          });
         }
 
         return res
@@ -377,6 +375,60 @@ app.delete("/delete-location/:locationID", (req, res) => {
       res.json({ message: "Location deleted successfully!" });
     });
   });
+});
+
+// Get location details by ID
+app.get("/get-location/:locationID", (req, res) => {
+  const { locationID } = req.params;
+
+  const query = `SELECT * FROM parkinglocation WHERE locationID = ?`;
+  db.query(query, [locationID], (err, results) => {
+    if (err) {
+      console.error("Error fetching location:", err);
+      return res
+        .status(500)
+        .json({ message: "Database error", error: err.message });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Location not found" });
+    }
+
+    res.json(results[0]);
+  });
+});
+
+// Update location
+app.put("/update-location", (req, res) => {
+  const { locationID, locationName, district, state } = req.body;
+
+  if (!locationID || !locationName || !district || !state) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  const query = `
+    UPDATE parkinglocation
+    SET location_name = ?, district = ?, state = ?
+    WHERE locationID = ?
+  `;
+
+  db.query(
+    query,
+    [locationName, district, state, locationID],
+    (err, result) => {
+      if (err) {
+        console.error("Error updating location:", err);
+        res.status(500).json({ message: "Database error", error: err.message });
+        return;
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: "Location not found" });
+      }
+
+      res.json({ message: "Location updated successfully!" });
+    }
+  );
 });
 
 // Get all parking lots by location ID

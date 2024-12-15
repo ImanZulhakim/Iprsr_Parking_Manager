@@ -76,7 +76,9 @@ function addParkingLot() {
   const locationType = document.getElementById("locationType").value;
 
   if (!lotID || !locationName || !locationID || locationType !== "outdoor") {
-    alert("Please provide Lot ID, Location Name, and ensure Location Type is Outdoor.");
+    alert(
+      "Please provide Lot ID, Location Name, and ensure Location Type is Outdoor."
+    );
     return;
   }
 
@@ -84,7 +86,12 @@ function addParkingLot() {
   fetch("/add-lot", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lotID, lot_name: locationName, locationID, locationType }),
+    body: JSON.stringify({
+      lotID,
+      lot_name: locationName,
+      locationID,
+      locationType,
+    }),
   })
     .then((response) => {
       if (!response.ok) {
@@ -114,8 +121,16 @@ function addIndoorParkingLot() {
   const locationType = document.getElementById("locationType").value;
   const floorLevel = document.getElementById("floorLevel").value;
 
-  if (!lotID || !locationName || !locationID || locationType !== "indoor" || !floorLevel) {
-    alert("Please provide Lot ID, Location Name, Floor/Level, and ensure Location Type is Indoor.");
+  if (
+    !lotID ||
+    !locationName ||
+    !locationID ||
+    locationType !== "indoor" ||
+    !floorLevel
+  ) {
+    alert(
+      "Please provide Lot ID, Location Name, Floor/Level, and ensure Location Type is Indoor."
+    );
     return;
   }
 
@@ -126,7 +141,13 @@ function addIndoorParkingLot() {
   fetch("/add-lot", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lotID, lot_name: locationName, locationID, locationType, coordinates }),
+    body: JSON.stringify({
+      lotID,
+      lot_name: locationName,
+      locationID,
+      locationType,
+      coordinates,
+    }),
   })
     .then((response) => {
       if (!response.ok) {
@@ -194,25 +215,27 @@ function drawParkingLot(lotID) {
   L.control.layers(baseMaps).addTo(currentMap);
 
   // Create a custom geocoder
-const geocoder = L.Control.Geocoder.nominatim();
+  const geocoder = L.Control.Geocoder.nominatim();
 
-// Add the geocoder control
-L.Control.geocoder({
-  geocoder: geocoder, // Use the custom geocoder
-  defaultMarkers: false, // Explicitly disable default markers
-  collapsed: false, // Keep the search bar expanded
-}).on('markgeocode', function (e) {
-  // Zoom to the searched location
-  const latlng = e.geocode.center;
-  currentMap.setView(latlng, 17); // Zoom in to the searched location
+  // Add the geocoder control
+  L.Control.geocoder({
+    geocoder: geocoder, // Use the custom geocoder
+    defaultMarkers: false, // Explicitly disable default markers
+    collapsed: false, // Keep the search bar expanded
+  })
+    .on("markgeocode", function (e) {
+      // Zoom to the searched location
+      const latlng = e.geocode.center;
+      currentMap.setView(latlng, 17); // Zoom in to the searched location
 
-  // Remove any existing markers
-  currentMap.eachLayer(function (layer) {
-    if (layer instanceof L.Marker) {
-      currentMap.removeLayer(layer);
-    }
-  });
-}).addTo(currentMap);
+      // Remove any existing markers
+      currentMap.eachLayer(function (layer) {
+        if (layer instanceof L.Marker) {
+          currentMap.removeLayer(layer);
+        }
+      });
+    })
+    .addTo(currentMap);
 
   drawnItems = new L.FeatureGroup();
   currentMap.addLayer(drawnItems);
@@ -417,14 +440,18 @@ function loadParkingLocations() {
                       <td>${location.district}</td>
                       <td>${location.state}</td>
                       <td>
-                          <!-- View Lots Button -->
-                          <button class="action-btn view-btn" onclick="viewLots('${location.locationID}', '${location.location_name}')">
-                              <i class="fas fa-eye"></i> View Lots
-                          </button>
-                          <!-- Delete Location Button -->
-                          <button class="action-btn delete-btn" onclick="deleteParkingLocation('${location.locationID}')">
-                              <i class="fas fa-trash"></i>
-                          </button>
+                        <!-- View Lots Button -->
+                        <button class="action-btn view-btn" onclick="viewLots('${location.locationID}', '${location.location_name}')">
+                          <i class="fas fa-eye"></i> View Lots
+                        </button>
+                        <!-- Edit Location Button -->
+                        <button class="action-btn edit-btn" onclick="editParkingLocation('${location.locationID}')">
+                          <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <!-- Delete Location Button -->
+                        <button class="action-btn delete-btn" onclick="deleteParkingLocation('${location.locationID}')">
+                          <i class="fas fa-trash"></i>
+                        </button>
                       </td>
                   </tr>`
             )
@@ -466,14 +493,107 @@ async function deleteParkingLocation(locationID) {
 
     // Show success message
     showPopup(data.message, "success");
-
-    // Refresh the parking locations list
-    loadParkingLocations();
+    
   } catch (error) {
     console.error("Error deleting parking location:", error);
     showPopup("Error deleting parking location. Please try again.", "error");
   }
 }
+
+// Ensure script runs after DOM is fully loaded
+document.addEventListener("DOMContentLoaded", function () {
+  // Check which page we are on
+  if (window.location.pathname.includes("edit-location.html")) {
+    prefillFormFields();
+    handleFormSubmission();
+  }
+});
+
+// Function to fetch location data and redirect to the edit page
+function editParkingLocation(locationID) {
+  fetch(`/get-location/${locationID}`)
+    .then((response) => response.json())
+    .then((location) => {
+      if (!location) {
+        alert("Location not found.");
+        return;
+      }
+
+      // Build query parameters to pass data to the edit page
+      const queryParams = new URLSearchParams({
+        locationID: location.locationID,
+        locationName: location.location_name,
+        district: location.district,
+        state: location.state,
+      });
+
+      // Redirect to edit-location.html with query parameters
+      window.location.href = `edit-location.html?${queryParams.toString()}`;
+    })
+    .catch((error) => {
+      console.error("Error fetching location details:", error);
+      alert("Failed to fetch location data.");
+    });
+}
+
+// Function to pre-fill form fields on the edit page
+function prefillFormFields() {
+  const urlParams = new URLSearchParams(window.location.search);
+
+  const locationID = urlParams.get("locationID");
+  const locationName = urlParams.get("locationName");
+  const district = urlParams.get("district");
+  const state = urlParams.get("state");
+
+  // Populate fields if query parameters are present
+  if (locationID && locationName && district && state) {
+    document.querySelector("#locationID").value = locationID;
+    document.querySelector("#locationName").value = locationName;
+    document.querySelector("#district").value = district;
+    document.querySelector("#state").value = state;
+  } else {
+    console.error("Invalid or missing query parameters.");
+    alert("Error loading location data.");
+  }
+}
+
+// Function to handle form submission and update location data
+function handleFormSubmission() {
+  const editForm = document.querySelector("#edit-location-form");
+
+  if (editForm) {
+    editForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      // Collect form data
+      const locationID = document.querySelector("#locationID").value;
+      const locationName = document.querySelector("#locationName").value;
+      const district = document.querySelector("#district").value;
+      const state = document.querySelector("#state").value;
+
+      // Send updated data to the server
+      fetch("/update-location", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locationID, locationName, district, state }),
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Failed to update location");
+          return response.json();
+        })
+        .then((data) => {
+          showPopup("Location updated successfully!", "success");setTimeout(() => {
+            window.location.href = "index.html"; // Redirect back to the main page
+          }, 2000);
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("Error updating location. Please try again.");
+        });
+    });
+  }
+}
+
 
 // Go to add lot page
 function goToAddLot() {
@@ -814,7 +934,8 @@ function viewSpaces(lotID) {
       createPaginationControls();
 
       // Show containers
-      document.querySelector("#parking-spaces-container").style.display = "block";
+      document.querySelector("#parking-spaces-container").style.display =
+        "block";
 
       // Fetch the lot details to get the locationType
       fetch(`/get-lot/${lotID}`)
@@ -824,7 +945,8 @@ function viewSpaces(lotID) {
           currentLocationType = lot.locationType;
 
           // Update the title dynamically
-          document.getElementById("current-lot-location").textContent = lot.lot_name;
+          document.getElementById("current-lot-location").textContent =
+            lot.lot_name;
 
           // Toggle map container visibility based on locationType
           const mapContainer = document.getElementById("view-map-container");
@@ -1549,17 +1671,19 @@ function addParkingSpace() {
 
   // Get locationType from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
-  const locationType = urlParams.get('locationType');
+  const locationType = urlParams.get("locationType");
 
   let coordinates = "N/A"; // Default for indoor spaces
 
-  if (locationType === 'outdoor') {
+  if (locationType === "outdoor") {
     // For outdoor spaces, get coordinates from the map
     if (!currentSpaceCoordinates) {
       showPopup("Please mark the space location on the map.", "error");
       return;
     }
-    coordinates = `${currentSpaceCoordinates.lat.toFixed(6)}, ${currentSpaceCoordinates.lng.toFixed(6)}`;
+    coordinates = `${currentSpaceCoordinates.lat.toFixed(
+      6
+    )}, ${currentSpaceCoordinates.lng.toFixed(6)}`;
   }
 
   if (!spaceID || !parkingType || !lotID) {
@@ -1808,7 +1932,6 @@ function startSpaceMarking() {
 //       return `${centerLat}, ${centerLng}`;
 //     });
 // }
-
 
 // Load lot select
 function loadLotSelect() {
