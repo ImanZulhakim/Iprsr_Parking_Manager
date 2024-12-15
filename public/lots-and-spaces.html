@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IPRSR Management - Lots & Spaces</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+  </head>
+  <body class="index-page">
+    <!-- Navigation Bar -->
+    <div id="navbar-placeholder"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="header-row">
+        <h2 id="section-title">Parking Lots & Spaces</h2>
+      </div>
+
+      <!-- Parking Lots Section -->
+      <div id="view-lots" class="section">
+        <div class="table-container">
+          <div class="table-header">
+            <div class="header-content">
+              <button class="back-btn" onclick="goBackToLocations()">←</button>
+              <h3>Parking Lots</h3>
+              <button onclick="goToAddLot()" class="action-btn add-btn">
+                <i class="fas fa-plus"></i> Add New Lot
+              </button>
+            </div>
+          </div>
+          <table id="lots-table">
+            <thead>
+              <tr>
+                <th>Lot ID</th>
+                <th>Lot Name</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Map Container -->
+      <div id="view-map-container" style="display: none; height: 400px"></div>
+
+      <!-- Parking Spaces Section -->
+      <div
+        id="parking-spaces-container"
+        class="table-container"
+        style="display: none"
+      >
+        <div class="table-header">
+          <div class="header-content">
+            <h3>Parking Spaces - <span id="current-lot-location"></span></h3>
+            <button
+              onclick="window.location.href='add-spaces.html?lotID=' + encodeURIComponent(currentLotID) + '&locationType=' + encodeURIComponent(currentLocationType)"
+              class="add-btn"
+            >
+              <i class="fas fa-plus"></i> Add New Space
+            </button>
+          </div>
+        </div>
+        <table id="spaces-table">
+          <thead>
+            <tr>
+              <th>Space ID</th>
+              <th>Type</th>
+              <th>Nearest</th>
+              <th>Covered</th>
+              <th>Wheelchair</th>
+              <th>Large</th>
+              <th>Well Lit</th>
+              <th>EV</th>
+              <th>Family</th>
+              <th>Premium</th>
+              <th>Lot ID</th>
+              <th>Status</th>
+              <th>Location</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div id="paginationControls" class="pagination-controls"></div>
+      </div>
+    </div>
+
+    <!-- External Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        $(document).ready(function() {
+          $("#navbar-placeholder").load("navbar.html", function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const locationID = urlParams.get("locationID") || sessionStorage.getItem("currentLocationID");
+            const locationName = urlParams.get("locationName") || sessionStorage.getItem("currentLocationName");
+
+
+            if (locationID) {
+              document.getElementById("section-title").textContent = `Parking Lots & Spaces - ${locationName || locationID}`;
+              // Ensure view-lots is visible
+              const viewLotsSection = document.getElementById("view-lots");
+              if (viewLotsSection) {
+                viewLotsSection.style.display = "block";
+              }
+              loadParkingLots(locationID);
+            } else {
+              showPopup("No location selected", "error");
+              setTimeout(() => {
+                window.location.href = "index.html";
+              }, 2000);
+            }
+          });
+        });
+      </script>
+    <script src="app.js"></script>
+  </body>
+</html>

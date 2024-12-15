@@ -19,13 +19,16 @@ $(document).ready(function () {
     // Only try to show view-lots if we're on the index page
     const viewLotsElement = document.querySelector("#view-lots");
     if (viewLotsElement) {
-      viewLotsElement.style.display = "none"; // Ensure Parking Lots section is hidden
+      viewLotsElement.style.display = "block"; // Ensure Parking Lots section is hidden
     }
     const sectionTitle = document.getElementById("section-title");
-    if (sectionTitle) sectionTitle.textContent = "Home";
 
-    // Load Parking Locations on page load
-    loadParkingLocations();
+    const locationsTable = document.querySelector("#locations-table");
+
+    if (locationsTable) {
+      if (sectionTitle) sectionTitle.textContent = "Home";
+      loadParkingLocations(); // Only run loadParkingLocations() if #locations-table exists
+    }
   });
 });
 
@@ -203,12 +206,15 @@ document
   });
 
 // Initialize indoor map when location type changes
-document.getElementById("locationType").addEventListener("change", function () {
-  const locationType = this.value;
-  if (locationType === "indoor") {
-    initIndoorMap();
-  }
-});
+const locationTypeElement = document.getElementById("locationType");
+if (locationTypeElement) {
+  locationTypeElement.addEventListener("change", function () {
+    const locationType = this.value;
+    if (locationType === "indoor") {
+      initIndoorMap();
+    }
+  });
+}
 
 // Initialize indoor map
 function initIndoorMap() {
@@ -505,45 +511,36 @@ function goBack() {
 }
 
 // Load parking locations
+// In the loadParkingLocations function, modify the row creation part
 function loadParkingLocations() {
   fetch("/get-all-locations")
     .then((response) => response.json())
     .then((locations) => {
-      const locationsTableBody = document.querySelector(
-        "#locations-table tbody"
-      );
-      if (!locationsTableBody) {
-        console.error("Locations table body not found.");
-        return;
-      }
+      const tbody = document.querySelector("#locations-table tbody");
+      tbody.innerHTML = locations
+        .map(
+          (location) => `
+            <tr>
+              <td>${location.locationID}</td>
+              <td>${location.location_name}</td>
+              <td>${location.district}</td>
+              <td>${location.state}</td>
+              <td>
+                <button class="action-btn view-btn" onclick="viewLots('${location.locationID}', '${location.location_name}')">
+                  <i class="fas fa-eye"></i> View Lots
+                </button>
 
-      locationsTableBody.innerHTML = locations.length
-        ? locations
-            .map(
-              (location) => `
-                  <tr data-location-id="${location.locationID}">
-                      <td>${location.locationID}</td>
-                      <td>${location.location_name}</td>
-                      <td>${location.district}</td>
-                      <td>${location.state}</td>
-                      <td>
-                        <!-- View Lots Button -->
-                        <button class="action-btn view-btn" onclick="viewLots('${location.locationID}', '${location.location_name}')">
-                          <i class="fas fa-eye"></i> View Lots
-                        </button>
-                        <!-- Edit Location Button -->
-                        <button class="action-btn edit-btn" onclick="editParkingLocation('${location.locationID}')">
-                          <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <!-- Delete Location Button -->
-                        <button class="action-btn delete-btn" onclick="deleteParkingLocation('${location.locationID}')">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </td>
-                  </tr>`
-            )
-            .join("")
-        : '<tr><td colspan="5">No parking locations available</td></tr>';
+                <button class="action-btn edit-btn" onclick="editLocation('${location.locationID}')">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="action-btn delete-btn" onclick="deleteLocation('${location.locationID}')">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `
+        )
+        .join("");
     })
     .catch((err) => {
       console.error("Error loading parking locations:", err);
@@ -551,11 +548,7 @@ function loadParkingLocations() {
     });
 }
 
-// Go to add location page
-function goToAddLocation() {
-  // Redirect to add-location.html for creating a new parking location
-  window.location.href = "add-location.html";
-}
+//
 
 // Delete parking location
 async function deleteParkingLocation(locationID) {
@@ -683,120 +676,85 @@ function handleFormSubmission() {
 
 // Go to add lot page
 function goToAddLot() {
-  const locationID = localStorage.getItem("currentLocationID");
-  const locationName = localStorage.getItem("currentLocationName");
+  const urlParams = new URLSearchParams(window.location.search);
+  const locationID = urlParams.get("locationID");
+  const locationName = urlParams.get("locationName");
 
   if (!locationID) {
     alert("Location ID is missing. Unable to add a lot.");
     return;
   }
 
-  window.location.href = `add-lot.html?locationID=${encodeURIComponent(
+  window.location.href = `add-lot.html?locationID=${encodeURIComponent(locationID)}&locationName=${encodeURIComponent(locationName)}`;
+}
+
+
+// Show parking lots when "View Lots" button is clicked
+function viewLots(locationID, locationName) {
+  // Store current location info in session storage
+  sessionStorage.setItem("currentLocationID", locationID);
+  sessionStorage.setItem("currentLocationName", locationName);
+
+  // Redirect to lots-and-spaces.html with query parameters
+  window.location.href = `lots-and-spaces.html?locationID=${encodeURIComponent(
     locationID
   )}&locationName=${encodeURIComponent(locationName)}`;
 }
 
-// Show parking lots when "View Lots" button is clicked
-function viewLots(locationID, locationName) {
-  // Store both locationID and locationName
-  localStorage.setItem("currentLocationID", locationID);
-  localStorage.setItem("currentLocationName", locationName);
-
-  const locationsContainer = document.querySelector("#view-locations");
-  const lotsContainer = document.querySelector("#view-lots");
-
-  if (locationsContainer && lotsContainer) {
-    locationsContainer.style.display = "none";
-    lotsContainer.style.display = "block";
-
-    const lotsTitle = document.querySelector("#view-lots .table-header h3");
-    if (lotsTitle) {
-      lotsTitle.textContent = `Parking Lots for ${locationName}`;
-    }
-
-    // Update the add button to include both ID and name
-    const addLotButton = document.querySelector("#view-lots .add-btn");
-    if (addLotButton) {
-      addLotButton.setAttribute("onclick", `goToAddLot()`);
-    }
-
-    loadParkingLots(locationID);
-  }
-}
-
 // Go back to Parking Locations
 function goBackToLocations() {
-  // Hide Parking Lots table
-  const lotsContainer = document.querySelector("#view-lots");
-  if (lotsContainer) lotsContainer.style.display = "none";
-
-  // Hide Parking Spaces table
-  const spacesContainer = document.querySelector("#parking-spaces-container");
-  if (spacesContainer) spacesContainer.style.display = "none";
-
-  // Hide the Map container
-  const mapContainer = document.querySelector("#view-map-container");
-  if (mapContainer) mapContainer.style.display = "none";
-
-  // Show Parking Locations table
-  const locationsContainer = document.querySelector("#view-locations");
-  if (locationsContainer) locationsContainer.style.display = "block";
-
-  // Clear map instance if exists
-  if (currentMap) {
-    currentMap.off();
-    currentMap.remove();
-    currentMap = null;
-  }
+  window.location.href = "index.html";
 }
 
 // Load parking lots based on the selected location
 function loadParkingLots(locationID) {
-  fetch(`/get-lots-by-location/${locationID}`)
-    .then((response) => response.json())
-    .then((lots) => {
-      const lotsTableBody = document.querySelector("#lots-table tbody");
-      if (!lotsTableBody) {
-        console.error("Lots table body not found.");
-        return;
-      }
+  if (!locationID) {
+    console.error("No locationID provided to loadParkingLots");
+    showPopup("Error: No valid location ID provided.", "error");
+    return;
+  }
 
-      // Populate table or display fallback
-      lotsTableBody.innerHTML = lots.length
+  const tbody = document.querySelector("#lots-table tbody");
+
+  if (!tbody) {
+    console.error("Element '#lots-table tbody' not found in the DOM!");
+    return;
+  }
+
+  fetch(`/get-lots-by-location/${locationID}`)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((lots) => {
+      tbody.innerHTML = lots.length
         ? lots
             .map(
               (lot) => `
-          <tr>
-            <td>${lot.lotID}</td>
-            <td>${lot.lot_name}</td>
-            <td>
-              <button class="action-btn view-btn" onclick="viewSpaces('${lot.lotID}')">
-                <i class="fas fa-eye"></i> View Spaces
-              </button>
-              <div class="toggle-container">
-                  <input type="checkbox" id="toggle-${lot.lotID}" class="toggle-checkbox" onchange="toggleReserved('${lot.lotID}', this)">
-                  <label for="toggle-${lot.lotID}" class="toggle-label">
-                      <div class="toggle-inner">
-                          <span class="reserve">RESERVE LOT</span>
-                      </div>
-                      <div class="toggle-switch"></div>
-                  </label>
-              </div>
-              <button class="action-btn edit-btn" onclick="editLotBoundary('${lot.lotID}')">
-                <i class="fas fa-draw-polygon"></i> Edit Boundary
-              </button>
-              <button class="action-btn delete-btn" onclick="deleteParkingLot('${lot.lotID}')">
-                <i class="fas fa-trash"></i>
-              </button>
-            </td>
-          </tr>`
+                <tr>
+                  <td>${lot.lotID}</td>
+                  <td>${lot.lot_name}</td>
+                  <td>
+                    <button class="action-btn view-btn" onclick="viewSpaces('${lot.lotID}', '${lot.lot_name}')">
+                      <i class="fas fa-eye"></i> View Spaces
+                    </button>
+                    <button class="action-btn edit-btn" onclick="editLotBoundary('${lot.lotID}')">
+                      <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="action-btn delete-btn" onclick="deleteParkingLot('${lot.lotID}')">
+                      <i class="fas fa-trash"></i> Delete
+                    </button>
+                  </td>
+                </tr>`
             )
             .join("")
         : '<tr><td colspan="3">No parking lots available</td></tr>';
     })
-    .catch((err) => {
-      console.error("Error loading parking lots:", err);
-      showPopup("Failed to load parking lots.", "error");
+    .catch((error) => {
+      console.error("Error loading parking lots:", error);
+      showPopup("Failed to load parking lots. Please try again.", "error");
     });
 }
 
@@ -2007,23 +1965,6 @@ function startSpaceMarking() {
       showPopup("Error loading lot boundaries. Please try again.", "error");
     });
 }
-
-// Calculate lot center point
-// function calculateLotCenterPoint(lotID) {
-//   return fetch(`/get-lot-boundary/${lotID}`)
-//     .then((response) => response.json())
-//     .then((points) => {
-//       if (!points || points.length === 0) return null;
-
-//       const lats = points.map((p) => p.lat);
-//       const lngs = points.map((p) => p.lng);
-
-//       const centerLat = (Math.max(...lats) + Math.min(...lats)) / 2;
-//       const centerLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
-
-//       return `${centerLat}, ${centerLng}`;
-//     });
-// }
 
 // Load lot select
 function loadLotSelect() {

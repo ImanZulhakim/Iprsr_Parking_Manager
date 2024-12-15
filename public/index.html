@@ -15,7 +15,6 @@
     />
   </head>
   <body class="index-page">
-    
     <!-- Navigation Bar -->
     <div id="navbar-placeholder"></div>
 
@@ -31,11 +30,9 @@
           <div class="table-header">
             <div class="header-content">
               <h3>Parking Locations</h3>
-              <!-- Add New Location Button -->
-            <button onclick="goToAddLocation()" class="add-btn">
-              <i class="fas fa-plus"></i> Add New Location
-            </button>
-
+              <button onclick="goToAddLocation()" class="add-btn">
+                <i class="fas fa-plus"></i> Add New Location
+              </button>
             </div>
           </div>
           <table id="locations-table">
@@ -52,92 +49,15 @@
           </table>
         </div>
       </div>
-
-      <!-- Parking Lots Section -->
-      <div id="view-lots" class="section" style="display: none">
-        <div class="table-container">
-          <div class="table-header">
-            <div class="header-content">
-              <button class="back-btn" onclick="goBackToLocations()">←</button>
-              <h3>Parking Lots</h3>
-              <button onclick="goToAddLot()" class="action-btn add-btn">
-                <i class="fas fa-plus"></i> Add New Lot
-              </button>
-            </div>
-          </div>
-          <table id="lots-table">
-            <thead>
-              <tr>
-                <th>Lot ID</th>
-                <th>Lot Name</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Map Container -->
-        <div id="view-map-container" style="display: none; height: 400px"></div>
-      </div>
     </div>
-
-    <!-- Parking Spaces Section -->
-<div
-id="parking-spaces-container"
-class="table-container"
-style="display: none"
->
-<div class="table-header">
-  <div class="header-content">
-    <h3>Parking Spaces - <span id="current-lot-location"></span></h3>
-    <button
-    onclick="window.location.href='add-spaces.html?lotID=' + encodeURIComponent(currentLotID) + '&locationType=' + encodeURIComponent(currentLocationType)"
-    class="add-btn"
-  >
-    <i class="fas fa-plus"></i> Add New Space
-  </button>
-
-  </div>
-</div>
-<table id="spaces-table">
-  <thead>
-    <tr>
-      <th>Space ID</th>
-      <th>Type</th>
-      <th>Nearest</th>
-      <th>Covered</th>
-      <th>Wheelchair</th>
-      <th>Large</th>
-      <th>Well Lit</th>
-      <th>EV</th>
-      <th>Family</th>
-      <th>Premium</th>
-      <th>Lot ID</th>
-      <th>Status</th>
-      <th>Location</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-<div id="paginationControls" class="pagination-controls"></div>
-</div>
 
     <!-- External Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-      // Ensure that the first section loads correctly
       $(document).ready(function () {
         $("#navbar-placeholder").load("navbar.html", function () {
-          // Ensure only the Parking Locations table is visible at startup
-          document.querySelector("#view-locations").style.display = "block"; // Show Parking Locations table
-          document.querySelector("#view-lots").style.display = "none"; // Hide Parking Lots table
-          document.querySelector("#parking-spaces-container").style.display =
-            "none"; // Hide Parking Spaces table
-          loadParkingLocations(); // Load parking locations on startup
+          loadParkingLocations();
         });
       });
     </script>
