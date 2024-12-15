@@ -64,14 +64,11 @@ body {
 /* Scoped styles for index.html */
 .index-page .main-content {
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+    margin: 4rem auto 2rem auto; /* 4rem margin at the top */
+    padding: 20px; /* Maintain existing padding */
 }
 
-.index-page .table-container {
-    margin: 20px auto;
-    overflow-x: auto;
-}
+
 
 .index-page h2 {
     font-size: 2rem;
@@ -187,6 +184,34 @@ td {
 
 tr:hover {
     background-color: #f8f9fa;
+}
+
+/* Table styling for better visuals */
+#spaces-table {
+    width: 100%;
+    /* Allow table to stretch horizontally */
+    border-collapse: collapse;
+}
+
+#spaces-table th,
+#spaces-table td {
+    padding: 12px 15px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+#spaces-table th {
+    background-color: #0077B6;
+    color: white;
+    font-weight: bold;
+}
+
+#spaces-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#spaces-table tr:hover {
+    background-color: #f1f1f1;
 }
 
 /* Set width for the Location column */
@@ -393,6 +418,44 @@ h3 {
     border-radius: 4px;
     font-size: 14px;
 }
+
+/* Location Type Dropdown Styling */
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+    appearance: none;
+    /* Remove default dropdown arrow */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23333'><path d='M7 7l3-3 3 3M7 13l3 3 3-3'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Hover and focus effects */
+.form-group select:hover {
+    border-color: #0077B6;
+}
+
+.form-group select:focus {
+    border-color: #0077B6;
+    box-shadow: 0 0 5px rgba(0, 123, 182, 0.3);
+    outline: none;
+}
+
+/* Dropdown options */
+.form-group select option {
+    padding: 10px;
+    background-color: #fff;
+    color: #333;
+}
+
 
 .form-control {
     width: 100%;
@@ -817,8 +880,39 @@ h3 {
 
 .table-header {
     position: relative;
-    margin-bottom: 1rem;
+    /* Needed to contain the button */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
 }
+
+.table-header .add-btn {
+    position: absolute;
+    right: 10px;
+    /* Adjust position */
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    /* Ensures it stays above the table */
+}
+
+/* Align title and button in a single row */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* Make the table container scrollable */
+.table-scroll-container {
+    overflow-x: auto;
+    /* Enable horizontal scroll */
+    margin-bottom: 15px;
+    /* Space between table and pagination */
+}
+
 
 .header-content {
     display: flex;

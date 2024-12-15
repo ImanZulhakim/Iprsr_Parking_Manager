@@ -389,7 +389,7 @@ function saveOutdoorParkingLot() {
     .then(() => {
       showPopup("Parking lot saved successfully!", "success");
       setTimeout(() => {
-        window.location.href = "index.html";
+        window.location.href = "lots-and-spaces.html";
       }, 2000);
     })
     .catch((err) => {
@@ -439,12 +439,13 @@ function performLotDeletion(lotID) {
     })
     .then((data) => {
       showPopup(data.message, "success");
-      viewSpaces(lotID); // Refresh lots list
+
+      // Refresh the parking lots table
+      const locationID = sessionStorage.getItem("currentLocationID");
+      loadParkingLots(locationID);
 
       // Clear and hide parking spaces table
-      const spacesContainer = document.querySelector(
-        "#parking-spaces-container"
-      );
+      const spacesContainer = document.querySelector("#parking-spaces-container");
       if (spacesContainer) {
         spacesContainer.style.display = "none";
       }
@@ -530,10 +531,10 @@ function loadParkingLocations() {
                   <i class="fas fa-eye"></i> View Lots
                 </button>
 
-                <button class="action-btn edit-btn" onclick="editLocation('${location.locationID}')">
+                <button class="action-btn edit-btn" onclick="editParkingLocation('${location.locationID}')">
                   <i class="fas fa-edit"></i> Edit
                 </button>
-                <button class="action-btn delete-btn" onclick="deleteLocation('${location.locationID}')">
+                <button class="action-btn delete-btn" onclick="deleteParkingLocation('${location.locationID}')">
                   <i class="fas fa-trash"></i>
                 </button>
               </td>
@@ -573,6 +574,10 @@ async function deleteParkingLocation(locationID) {
 
     // Show success message
     showPopup(data.message, "success");
+    setTimeout(() => {
+      window.location.reload(); // Refresh the page
+    }, 1500); // 1.5 seconds delay (adjust as needed)
+
   } catch (error) {
     console.error("Error deleting parking location:", error);
     showPopup("Error deleting parking location. Please try again.", "error");
@@ -685,9 +690,16 @@ function goToAddLot() {
     return;
   }
 
-  window.location.href = `add-lot.html?locationID=${encodeURIComponent(locationID)}&locationName=${encodeURIComponent(locationName)}`;
+  window.location.href = `add-lot.html?locationID=${encodeURIComponent(
+    locationID
+  )}&locationName=${encodeURIComponent(locationName)}`;
 }
 
+// Go to add lot page
+function goToAddLocation() {
+
+  window.location.href = `add-location.html`;
+}
 
 // Show parking lots when "View Lots" button is clicked
 function viewLots(locationID, locationName) {
@@ -740,6 +752,15 @@ function loadParkingLots(locationID) {
                     <button class="action-btn view-btn" onclick="viewSpaces('${lot.lotID}', '${lot.lot_name}')">
                       <i class="fas fa-eye"></i> View Spaces
                     </button>
+                    <div class="toggle-container">
+                  <input type="checkbox" id="toggle-${lot.lotID}" class="toggle-checkbox" onchange="toggleReserved('${lot.lotID}', this)">
+                  <label for="toggle-${lot.lotID}" class="toggle-label">
+                      <div class="toggle-inner">
+                          <span class="reserve">RESERVE LOT</span>
+                      </div>
+                      <div class="toggle-switch"></div>
+                  </label>
+              </div>
                     <button class="action-btn edit-btn" onclick="editLotBoundary('${lot.lotID}')">
                       <i class="fas fa-edit"></i> Edit
                     </button>
@@ -949,7 +970,7 @@ async function cancelEdit() {
     "Are you sure you want to cancel? Any unsaved changes will be lost."
   );
   if (confirmed) {
-    window.location.href = "index.html";
+    window.location.href = "lots-and-spaces.html";
   }
 }
 
@@ -993,9 +1014,16 @@ function viewSpaces(lotID) {
           const mapContainer = document.getElementById("view-map-container");
           if (currentLocationType === "outdoor") {
             mapContainer.style.display = "block"; // Show the map for outdoor lots
+          
+            currentMap.whenReady(() => {
+              currentMap.invalidateSize(); // Recalculate the map size
+            });
+            
           } else {
             mapContainer.style.display = "none"; // Hide the map for indoor lots
           }
+          
+          
         })
         .catch((err) => {
           console.error("Error fetching lot details:", err);
@@ -1772,7 +1800,7 @@ function addParkingSpace() {
     })
     .then(() => {
       showPopup("Parking space added successfully!", "success");
-      window.location.href = `index.html?lotID=${lotID}`;
+      window.location.href = `lots-and-spaces.html?lotID=${lotID}`;
     })
     .catch((error) => {
       console.error("Error creating parking space:", error);
@@ -1802,7 +1830,9 @@ async function deleteParkingSpace(spaceID) {
       .then((data) => {
         showPopup("Parking space deleted successfully", "success");
         // Refresh the current page to update the table
-        location.reload();
+        setTimeout(() => {
+          window.location.reload(); // Refresh the page
+        }, 1500); // 1.5 seconds delay (adjust as needed)
       })
       .catch((error) => {
         console.error("Error:", error);
