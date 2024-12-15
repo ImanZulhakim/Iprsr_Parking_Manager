@@ -10,6 +10,11 @@ body {
     background-color: #f0f2f5;
 }
 
+#locationNameDisplay {
+    font-weight: normal;
+    color: #666;
+  }
+  
 /* Navbar styles */
 .navbar {
     background-color: #0077B6;
@@ -59,6 +64,7 @@ body {
     font-size: 2rem;
     color: #0077B6;
   }
+  
   
   .index-page table {
     width: 100%;
