@@ -26,7 +26,7 @@
             <div id="edit-boundary-map" style="height: 500px;"></div>
 
             <div class="form-group"></div>
-                <p class="instruction">Click the polygon tool to start drawing a new boundary. The existing boundary will be replaced.</p>
+                <p class="instruction" style="color: grey; font-style: italic; margin-bottom: 20px">Click the polygon tool to start drawing a new boundary. The existing boundary will be replaced.</p>
                 <button type="button" onclick="cancelEdit()" class="action-btn cancel-btn">Cancel</button>
             </div>
         </div>
@@ -45,6 +45,17 @@
                 initEditBoundaryPage(lotID);
             }
         });
+
+        async function cancelEdit() {
+            const confirmed = await showConfirmDialog(
+                "Are you sure you want to cancel? Any unsaved changes will be lost."
+            );
+            if (confirmed) {
+                const locationID = sessionStorage.getItem("currentLocationID");
+                const locationName = sessionStorage.getItem("currentLocationName");
+                window.location.href = `lots-and-spaces.html?locationID=${locationID}&locationName=${locationName}`;
+            }
+        }
     </script>
 </body>
 </html> 

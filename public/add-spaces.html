@@ -161,15 +161,30 @@
         loadNextSpaceID(lotID);
 
         // Show/hide floor level group based on location type
+        const floorLevelGroup = document.getElementById("floorLevelGroup");
+        const markSpaceLocation = document.getElementById(
+          "mark-space-location"
+        );
+        const spaceMap = document.getElementById("space-map");
+        const levelType = document.getElementById("levelType");
+        const levelNumber = document.getElementById("levelNumber");
+
         if (locationType === "indoor") {
-          document.getElementById("floorLevelGroup").style.display = "block";
-          document.getElementById("mark-space-location").style.display = "none";
-          document.getElementById("space-map").style.display = "none";
+          floorLevelGroup.style.display = "block";
+          markSpaceLocation.style.display = "none";
+          spaceMap.style.display = "none";
+
+          // Enable required attributes for indoor fields
+          levelType.setAttribute("required", "true");
+          levelNumber.setAttribute("required", "true");
         } else {
-          document.getElementById("floorLevelGroup").style.display = "none";
-          document.getElementById("mark-space-location").style.display =
-            "block";
-          document.getElementById("space-map").style.display = "block";
+          floorLevelGroup.style.display = "none";
+          markSpaceLocation.style.display = "block";
+          spaceMap.style.display = "block";
+
+          // Disable required attributes for outdoor fields
+          levelType.removeAttribute("required");
+          levelNumber.removeAttribute("required");
         }
       });
     </script>

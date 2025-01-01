@@ -949,7 +949,7 @@ function initEditBoundaryPage(lotID) {
             showPopup("Parking lot boundary updated successfully!", "success");
             drawnItems.addLayer(layer);
             setTimeout(() => {
-              window.location.href = "index.html";
+              window.location.href = "lots-and-spaces?locationID=' + document.getElementById('hiddenLocationID').value + '&locationName=' + document.getElementById('locationNameDisplay').textContent.html";
             }, 2000);
           })
           .catch((err) => {
@@ -962,16 +962,6 @@ function initEditBoundaryPage(lotID) {
       console.error("Error loading lot details:", error);
       showPopup("Error loading lot details. Please try again.", "error");
     });
-}
-
-// Cancel edit boundary
-async function cancelEdit() {
-  const confirmed = await showConfirmDialog(
-    "Are you sure you want to cancel? Any unsaved changes will be lost."
-  );
-  if (confirmed) {
-    window.location.href = "lots-and-spaces.html";
-  }
 }
 
 // View lot details
@@ -1075,15 +1065,13 @@ function viewSpaces(lotID) {
 
                     if (!space.isAvailable) {
                       markerColor = "#FF5252"; // redAccent for occupied
-                    } else if (space.isNearest) {
-                      markerColor = "#69F0AE"; // greenAccent for recommended
-                    } else if (space.isWheelchairAccessible) {
+                    } else if (space.parkingType==='Special') {
                       markerColor = "#2196F3"; // blueAccent for special
-                    } else if (space.isFamilyParkingArea) {
+                    } else if (space.parkingType==='Family') {
                       markerColor = "#E040FB"; // purpleAccent for family
-                    } else if (space.hasEVCharging) {
+                    } else if (space.parkingType==='EV') {
                       markerColor = "#1DE9B6"; // tealAccent for EV
-                    } else if (space.isPremium) {
+                    } else if (space.parkingType==='Premium') {
                       markerColor = "#FFD54F"; // yellow/gold for premium
                     }
                     // Create custom marker icon with Google Maps style
@@ -1328,7 +1316,22 @@ function createPaginationControls() {
 
 // Navigate to edit space
 function navigateToEdit(spaceID) {
-  window.location.href = `edit-space.html?id=${spaceID}`;
+  // First fetch the lot information using the space's lotID
+  fetch(`/get-parking-space/${spaceID}`)
+    .then(response => response.json())
+    .then(space => {
+      // Get the lot details to determine locationType
+      return fetch(`/get-lot/${space.lotID}`)
+        .then(response => response.json())
+        .then(lot => {
+          // Navigate to edit page with both spaceID and locationType
+          window.location.href = `edit-space.html?id=${spaceID}&locationType=${lot.locationType}`;
+        });
+    })
+    .catch(error => {
+      console.error('Error fetching lot type:', error);
+      showPopup('Error loading parking space details', 'error');
+    });
 }
 
 // Edit parking space
@@ -1339,13 +1342,23 @@ function editParkingSpace(event) {
   const formData = new FormData(form);
   const spaceID = formData.get("spaceID");
 
+  // Handle coordinates based on location type
+  let coordinates;
+  if (document.getElementById('indoor-fields').style.display === 'block') {
+    // Format indoor coordinates
+    const levelType = formData.get("levelType");
+    const levelNumber = formData.get("levelNumber");
+    coordinates = `${levelType} ${levelNumber}`;
+  } else {
+    coordinates = formData.get("coordinates");
+  }
+
   // Convert form data to JSON object
   const updatedSpace = {
     parkingType: formData.get("parkingType"),
     isNearest: formData.get("isNearest") === "on" ? 1 : 0,
     isCovered: formData.get("isCovered") === "on" ? 1 : 0,
-    isWheelchairAccessible:
-      formData.get("isWheelchairAccessible") === "on" ? 1 : 0,
+    isWheelchairAccessible: formData.get("isWheelchairAccessible") === "on" ? 1 : 0,
     hasLargeSpace: formData.get("hasLargeSpace") === "on" ? 1 : 0,
     isWellLitArea: formData.get("isWellLitArea") === "on" ? 1 : 0,
     hasEVCharging: formData.get("hasEVCharging") === "on" ? 1 : 0,
@@ -1353,7 +1366,7 @@ function editParkingSpace(event) {
     isPremium: formData.get("isPremium") === "on" ? 1 : 0,
     isAvailable: formData.get("isAvailable") === "on" ? 1 : 0,
     lotID: formData.get("lotID"),
-    coordinates: formData.get("coordinates"),
+    coordinates: coordinates,
   };
 
   // Send PUT request to update the parking space
@@ -1373,7 +1386,9 @@ function editParkingSpace(event) {
     .then((data) => {
       showPopup("Parking space updated successfully!", "success");
       // Redirect back to the lot view
-      window.location.href = `index.html?lotID=${updatedSpace.lotID}`;
+      setTimeout(() => {
+        window.location.href = `lots-and-spaces.html?lotID=${updatedSpace.lotID}`;
+      }, 2000);
     })
     .catch((error) => {
       console.error("Error updating parking space:", error);
@@ -1429,140 +1444,150 @@ function loadParkingSpaceData(spaceID) {
     .then((res) => res.json())
     .then((space) => {
       // Fill form fields with space data
-      document.querySelector('input[name="spaceID"]').value =
-        space.parkingSpaceID;
+      document.querySelector('input[name="spaceID"]').value = space.parkingSpaceID;
       document.querySelector('input[name="lotID"]').value = space.lotID;
       document.getElementById("displaySpaceID").value = space.parkingSpaceID;
       document.getElementById("displayLotID").value = space.lotID;
-      document.querySelector('select[name="parkingType"]').value =
-        space.parkingType;
+      document.querySelector('select[name="parkingType"]').value = space.parkingType;
 
       // Set checkbox values
-      document.querySelector('input[name="isNearest"]').checked =
-        space.isNearest === 1;
-      document.querySelector('input[name="isCovered"]').checked =
-        space.isCovered === 1;
-      document.querySelector('input[name="isWheelchairAccessible"]').checked =
-        space.isWheelchairAccessible === 1;
-      document.querySelector('input[name="hasLargeSpace"]').checked =
-        space.hasLargeSpace === 1;
-      document.querySelector('input[name="isWellLitArea"]').checked =
-        space.isWellLitArea === 1;
-      document.querySelector('input[name="hasEVCharging"]').checked =
-        space.hasEVCharging === 1;
-      document.querySelector('input[name="isFamilyParkingArea"]').checked =
-        space.isFamilyParkingArea === 1;
-      document.querySelector('input[name="isPremium"]').checked =
-        space.isPremium === 1;
-      document.querySelector('input[name="isAvailable"]').checked =
-        space.isAvailable === 1;
+      document.querySelector('input[name="isNearest"]').checked = space.isNearest === 1;
+      document.querySelector('input[name="isCovered"]').checked = space.isCovered === 1;
+      document.querySelector('input[name="isWheelchairAccessible"]').checked = space.isWheelchairAccessible === 1;
+      document.querySelector('input[name="hasLargeSpace"]').checked = space.hasLargeSpace === 1;
+      document.querySelector('input[name="isWellLitArea"]').checked = space.isWellLitArea === 1;
+      document.querySelector('input[name="hasEVCharging"]').checked = space.hasEVCharging === 1;
+      document.querySelector('input[name="isFamilyParkingArea"]').checked = space.isFamilyParkingArea === 1;
+      document.querySelector('input[name="isPremium"]').checked = space.isPremium === 1;
+      document.querySelector('input[name="isAvailable"]').checked = space.isAvailable === 1;
 
-      // Initialize map with lot boundary
-      fetch(`/get-lot-boundary/${space.lotID}`)
+      // Fetch the parking lot to determine the location type
+      fetch(`/get-lot/${space.lotID}`)
         .then((response) => response.json())
-        .then((coordinates) => {
-          if (!coordinates || coordinates.length === 0) {
-            showPopup("No boundary found for this parking lot", "error");
-            return;
-          }
+        .then((lot) => {
+          const indoorFields = document.getElementById("indoor-fields");
+          const outdoorFields = document.getElementById("outdoor-fields");
 
-          if (editSpaceMap) {
-            editSpaceMap.off();
-            editSpaceMap.remove();
-          }
+          if (lot.locationType === "indoor") {
+            indoorFields.style.display = "block";
+            outdoorFields.style.display = "none";
 
-          // Initialize map
-          editSpaceMap = L.map("edit-space-map", {
-            maxZoom: 22,
-            minZoom: 15,
-          }).setView([coordinates[0][0], coordinates[0][1]], 19);
-
-          // Google Satellite (Primary layer)
-          const googleSat = L.tileLayer(
-            "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-            {
-              maxZoom: 22,
-              subdomains: ["mt0", "mt1", "mt2", "mt3"],
+            // Parse the coordinates to extract level/floor information
+            const coordinates = space.coordinates;
+            if (coordinates) {
+              const [levelType, levelNumber] = coordinates.split(" ");
+              document.getElementById("levelType").value = levelType;
+              document.getElementById("levelNumber").value = levelNumber;
             }
-          ).addTo(editSpaceMap);
+          } else {
+            indoorFields.style.display = "none";
+            outdoorFields.style.display = "block";
 
-          // OpenStreetMap (Alternative layer)
-          const streets = L.tileLayer(
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            {
-              maxZoom: 22,
-            }
-          );
+            // Initialize map with lot boundary
+            fetch(`/get-lot-boundary/${space.lotID}`)
+              .then((response) => response.json())
+              .then((coordinates) => {
+                if (!coordinates || coordinates.length === 0) {
+                  showPopup("No boundary found for this parking lot", "error");
+                  return;
+                }
 
-          // Layer control
-          const baseMaps = {
-            Satellite: googleSat,
-            Streets: streets,
-          };
-          L.control.layers(baseMaps).addTo(editSpaceMap);
+                if (editSpaceMap) {
+                  editSpaceMap.off();
+                  editSpaceMap.remove();
+                }
 
-          // Draw lot boundary
-          const polygon = L.polygon(coordinates, {
-            color: "yellow",
-            weight: 2,
-            fillOpacity: 0.1,
-          }).addTo(editSpaceMap);
+                // Initialize map
+                editSpaceMap = L.map("edit-space-map", {
+                  maxZoom: 22,
+                  minZoom: 15,
+                }).setView([coordinates[0][0], coordinates[0][1]], 19);
 
-          // Fit map to boundary
-          editSpaceMap.fitBounds(polygon.getBounds());
+                // Google Satellite (Primary layer)
+                const googleSat = L.tileLayer(
+                  "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+                  {
+                    maxZoom: 22,
+                    subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                  }
+                ).addTo(editSpaceMap);
 
-          // If space has coordinates, add marker
-          if (space.coordinates) {
-            try {
-              const [lat, lng] = space.coordinates
-                .split(",")
-                .map((coord) => parseFloat(coord.trim()));
-              if (!isNaN(lat) && !isNaN(lng)) {
-                editSpaceMarker = L.marker([lat, lng], {
-                  draggable: true,
+                // OpenStreetMap (Alternative layer)
+                const streets = L.tileLayer(
+                  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                  {
+                    maxZoom: 22,
+                  }
+                );
+
+                // Layer control
+                const baseMaps = {
+                  Satellite: googleSat,
+                  Streets: streets,
+                };
+                L.control.layers(baseMaps).addTo(editSpaceMap);
+
+                // Draw lot boundary
+                const polygon = L.polygon(coordinates, {
+                  color: "yellow",
+                  weight: 2,
+                  fillOpacity: 0.1,
                 }).addTo(editSpaceMap);
 
-                // Update coordinates when marker is dragged
-                editSpaceMarker.on("dragend", function (e) {
-                  const pos = e.target.getLatLng();
-                  document.getElementById(
-                    "coordinates"
-                  ).value = `${pos.lat},${pos.lng}`;
+                // Fit map to boundary
+                editSpaceMap.fitBounds(polygon.getBounds());
+
+                // If space has coordinates, add marker
+                if (space.coordinates) {
+                  try {
+                    const [lat, lng] = space.coordinates
+                      .split(",")
+                      .map((coord) => parseFloat(coord.trim()));
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                      editSpaceMarker = L.marker([lat, lng], {
+                        draggable: true,
+                      }).addTo(editSpaceMap);
+
+                      // Update coordinates when marker is dragged
+                      editSpaceMarker.on("dragend", function (e) {
+                        const pos = e.target.getLatLng();
+                        document.getElementById("coordinates").value = `${pos.lat},${pos.lng}`;
+                      });
+
+                      document.getElementById("coordinates").value = space.coordinates;
+                    }
+                  } catch (error) {
+                    console.error("Error setting marker:", error);
+                  }
+                }
+
+                // Add click handler for updating marker position
+                editSpaceMap.on("click", function (e) {
+                  if (editSpaceMarker) {
+                    editSpaceMap.removeLayer(editSpaceMarker);
+                  }
+
+                  editSpaceMarker = L.marker(e.latlng, {
+                    draggable: true,
+                  }).addTo(editSpaceMap);
+
+                  document.getElementById("coordinates").value = `${e.latlng.lat},${e.latlng.lng}`;
+
+                  editSpaceMarker.on("dragend", function (e) {
+                    const pos = e.target.getLatLng();
+                    document.getElementById("coordinates").value = `${pos.lat},${pos.lng}`;
+                  });
                 });
-
-                document.getElementById("coordinates").value =
-                  space.coordinates;
-              }
-            } catch (error) {
-              console.error("Error setting marker:", error);
-            }
+              })
+              .catch((err) => {
+                console.error("Error loading lot boundaries:", err);
+                showPopup("Error loading lot boundaries", "error");
+              });
           }
-
-          // Add click handler for updating marker position
-          editSpaceMap.on("click", function (e) {
-            if (editSpaceMarker) {
-              editSpaceMap.removeLayer(editSpaceMarker);
-            }
-
-            editSpaceMarker = L.marker(e.latlng, {
-              draggable: true,
-            }).addTo(editSpaceMap);
-
-            document.getElementById(
-              "coordinates"
-            ).value = `${e.latlng.lat},${e.latlng.lng}`;
-
-            editSpaceMarker.on("dragend", function (e) {
-              const pos = e.target.getLatLng();
-              document.getElementById(
-                "coordinates"
-              ).value = `${pos.lat},${pos.lng}`;
-            });
-          });
         })
-        .catch((err) => {
-          console.error("Error loading lot boundaries:", err);
-          showPopup("Error loading lot boundaries", "error");
+        .catch((error) => {
+          console.error("Error loading parking lot data:", error);
+          showPopup("Failed to load parking lot data", "error");
         });
     })
     .catch((error) => {
@@ -1570,6 +1595,7 @@ function loadParkingSpaceData(spaceID) {
       showPopup("Failed to load parking space data", "error");
     });
 }
+
 
 // Update checkboxes based on parking type
 function updateCheckboxesBasedOnType(parkingType) {

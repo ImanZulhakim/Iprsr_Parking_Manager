@@ -26,34 +26,43 @@
       <h2>Add New Parking Lot - <span id="locationNameDisplay"></span></h2>
       <div class="lot-form">
         <div class="form-group">
-          <label for="lotID">Lot ID:</label>
-          <input type="text" id="lotID" required />
-        </div>
-        <div class="form-group">
-          <label for="lotName">Location Name:</label>
-          <input type="text" id="lotName" required />
-          <input type="hidden" id="hiddenLocationID" value="" />
-        </div>
-        <div class="form-group">
           <label for="locationType">Location Type:</label>
           <select id="locationType" required>
-            <option value="">Select Location Type</option>
+            <option value="" disabled selected>Select Location Type</option>
             <option value="outdoor">Outdoor</option>
             <option value="indoor">Indoor</option>
           </select>
         </div>
 
+        <div class="form-group">
+          <label for="lotID">Lot ID:</label>
+          <input type="text" id="lotID" placeholder="Enter Lot ID" required />
+        </div>
+        <div class="form-group">
+          <label for="lotName">Location Name:</label>
+          <input
+            type="text"
+            id="lotName"
+            placeholder="Enter Location Name"
+            required
+          />
+          <input type="hidden" id="hiddenLocationID" value="" />
+        </div>
+
         <!-- Map container - Always visible -->
-        <div id="map-container">
+        <div id="map-container" style="margin-bottom: 20px">
           <div id="map" style="height: 400px"></div>
         </div>
 
         <!-- Outdoor section -->
         <div id="outdoor-section" style="display: none">
-          <p class="instruction">
-            After entering Lot ID and Location Name, click "Start Drawing" to
-            define the parking lot boundaries on the map.
+          <p class="instruction" style="color: grey; font-style: italic">
+            1. Click "Start Drawing" to activate the drawing tool<br />
+            2. Click ⬠ on the map to draw the parking lot boundary<br />
+            3. Click the first point to complete the boundary<br />
+            4. Click "Save Outdoor Parking Lot" when finished
           </p>
+
           <button type="button" onclick="startDrawing()" class="action-btn">
             Start Drawing
           </button>
@@ -61,13 +70,13 @@
             <button
               type="button"
               onclick="saveOutdoorParkingLot()"
-              class="action-btn"
+              class="action-btn add-btn"
             >
               Save Outdoor Parking Lot
             </button>
             <button
               type="button"
-              onclick="window.location.href='index.html'"
+              onclick="window.location.href='lots-and-spaces.html?locationID=' + document.getElementById('hiddenLocationID').value + '&locationName=' + document.getElementById('locationNameDisplay').textContent"
               class="cancel-btn"
             >
               Cancel
@@ -77,20 +86,20 @@
 
         <!-- Indoor section -->
         <div id="indoor-section" style="display: none">
-          <p class="instruction">
+          <p class="instruction" style="color: grey; font-style: italic">
             Click on the map to mark the indoor parking lot location.
           </p>
           <div class="form-actions">
             <button
               type="button"
               onclick="saveIndoorParkingLot()"
-              class="action-btn"
+              class="action-btn add-btn"
             >
               Save Indoor Parking Lot
             </button>
             <button
               type="button"
-              onclick="window.location.href='index.html'"
+              onclick="window.location.href='lots-and-spaces.html?locationID=' + document.getElementById('hiddenLocationID').value + '&locationName=' + document.getElementById('locationNameDisplay').textContent"
               class="cancel-btn"
             >
               Cancel
@@ -106,49 +115,53 @@
     <!-- Leaflet Control Geocoder Plugin -->
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <script>
-     $(document).ready(function () {
-  $("#navbar-placeholder").load("navbar.html");
+      $(document).ready(function () {
+        $("#navbar-placeholder").load("navbar.html");
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const locationID = urlParams.get("locationID");
-  const locationName = urlParams.get("locationName");
+        const urlParams = new URLSearchParams(window.location.search);
+        const locationID = urlParams.get("locationID");
+        const locationName = urlParams.get("locationName");
 
-  if (!locationID) {
-    alert("Location ID is missing. Returning to the home page.");
-    window.location.href = "index.html";
-    return;
-  }
+        if (!locationID) {
+          alert("Location ID is missing. Returning to the home page.");
+          window.location.href = "index.html";
+          return;
+        }
 
-  if (locationName) {
-    document.getElementById("locationNameDisplay").textContent = locationName;
-  }
+        if (locationName) {
+          document.getElementById("locationNameDisplay").textContent =
+            locationName;
+        }
 
-  document.getElementById("hiddenLocationID").value = locationID;
+        document.getElementById("hiddenLocationID").value = locationID;
 
-  // Hide map initially
-  document.getElementById("map").style.display = "none";
+        // Hide map initially
+        document.getElementById("map").style.display = "none";
 
-  document.getElementById("locationType").addEventListener("change", function () {
-    const locationType = this.value;
-    const mapElement = document.getElementById("map");
+        document
+          .getElementById("locationType")
+          .addEventListener("change", function () {
+            const locationType = this.value;
+            const mapElement = document.getElementById("map");
 
-    if (locationType === "outdoor") {
-      document.getElementById("outdoor-section").style.display = "block";
-      document.getElementById("indoor-section").style.display = "none";
-      mapElement.style.display = "block";
-      initMap("map");
-    } else if (locationType === "indoor") {
-      document.getElementById("outdoor-section").style.display = "none";
-      document.getElementById("indoor-section").style.display = "block";
-      mapElement.style.display = "block";
-      initIndoorMap();
-    } else {
-      document.getElementById("outdoor-section").style.display = "none";
-      document.getElementById("indoor-section").style.display = "none";
-      mapElement.style.display = "none";
-    }
-  });
-});
+            if (locationType === "outdoor") {
+              document.getElementById("outdoor-section").style.display =
+                "block";
+              document.getElementById("indoor-section").style.display = "none";
+              mapElement.style.display = "block";
+              initMap("map");
+            } else if (locationType === "indoor") {
+              document.getElementById("outdoor-section").style.display = "none";
+              document.getElementById("indoor-section").style.display = "block";
+              mapElement.style.display = "block";
+              initIndoorMap();
+            } else {
+              document.getElementById("outdoor-section").style.display = "none";
+              document.getElementById("indoor-section").style.display = "none";
+              mapElement.style.display = "none";
+            }
+          });
+      });
     </script>
     <script src="app.js"></script>
   </body>

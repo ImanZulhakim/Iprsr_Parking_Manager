@@ -853,13 +853,13 @@ h3 {
 }
 
 #edit-space-page .cancel-btn {
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: #dc3545;
+    color: white;
     border: 1px solid #ddd;
 }
 
 #edit-space-page .cancel-btn:hover {
-    background-color: #e0e0e0;
+    background-color: #c82333;
 }
 
 #edit-space-page .form-actions button:hover {
@@ -1019,3 +1019,22 @@ h3 {
     background: #ff4444;
     color: white;
 }
+
+.level-inputs {
+    display: flex;
+    gap: 15px;
+    margin-top: 8px;
+  }
+  
+  .level-type-wrapper,
+  .level-number-wrapper {
+    flex: 1;
+  }
+  
+  .level-type-wrapper select,
+  .level-number-wrapper input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }

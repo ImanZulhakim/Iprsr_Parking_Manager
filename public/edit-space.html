@@ -44,38 +44,38 @@
         </div>
 
         <div class="checkbox-group-container">
-          <label for="parkingPreferences" class="checkbox-group-label"
-            >Parking Preferences</label
-          >
+          <label for="parkingPreferences" class="checkbox-group-label">Parking Preferences</label>
           <div class="checkbox-group">
             <label><input type="checkbox" name="isNearest" /> Nearest</label>
             <label><input type="checkbox" name="isCovered" /> Covered</label>
-            <label
-              ><input type="checkbox" name="isWheelchairAccessible" />
-              Wheelchair Accessible</label
-            >
-            <label
-              ><input type="checkbox" name="hasLargeSpace" /> Large Space</label
-            >
-            <label
-              ><input type="checkbox" name="isWellLitArea" /> Well Lit
-              Area</label
-            >
-            <label
-              ><input type="checkbox" name="hasEVCharging" /> EV Charging</label
-            >
-            <label
-              ><input type="checkbox" name="isFamilyParkingArea" /> Family
-              Parking</label
-            >
+            <label><input type="checkbox" name="isWheelchairAccessible" /> Wheelchair Accessible</label>
+            <label><input type="checkbox" name="hasLargeSpace" /> Large Space</label>
+            <label><input type="checkbox" name="isWellLitArea" /> Well Lit Area</label>
+            <label><input type="checkbox" name="hasEVCharging" /> EV Charging</label>
+            <label><input type="checkbox" name="isFamilyParkingArea" /> Family Parking</label>
             <label><input type="checkbox" name="isPremium" /> Premium</label>
-            <label
-              ><input type="checkbox" name="isAvailable" /> Available</label
-            >
+            <label><input type="checkbox" name="isAvailable" /> Available</label>
           </div>
         </div>
 
-        <div class="form-row">
+       <!-- Indoor location fields -->
+<div id="indoor-fields" class="form-row" style="display: none;">
+  <label>Floor/Level:</label>
+  <div class="level-inputs">
+    <div class="level-type-wrapper">
+      <select id="levelType" name="levelType" required>
+        <option value="FLOOR">Floor</option>
+        <option value="LEVEL">Level</option>
+      </select>
+    </div>
+    <div class="level-number-wrapper">
+      <input type="number" id="levelNumber" name="levelNumber" min="-5" max="100" required />
+    </div>
+  </div>
+</div>
+
+        <!-- Outdoor location map -->
+        <div id="outdoor-fields" class="form-row">
           <label>Space Location:</label>
           <div id="edit-space-map" style="height: 400px; width: 100%"></div>
           <input type="hidden" id="coordinates" name="coordinates" />
@@ -83,13 +83,7 @@
 
         <div class="form-actions">
           <button type="submit" class="submit-btn">Save Changes</button>
-          <button
-            type="button"
-            onclick="window.location.href='lots-and-spaces.html'"
-            class="cancel-btn"
-          >
-            Cancel
-          </button>
+          <button type="button" onclick="goBackToLots()" class="cancel-btn">Cancel</button>
         </div>
       </form>
     </div>
@@ -104,15 +98,35 @@
         if (window.location.pathname.endsWith("edit-space.html")) {
           const urlParams = new URLSearchParams(window.location.search);
           const spaceID = urlParams.get("id");
+          const locationType = urlParams.get("locationType");
 
           if (spaceID) {
-            // Then load parking space data which will initialize the map
+            // Show/hide fields based on location type
+            const indoorFields = document.getElementById("indoor-fields");
+            const outdoorFields = document.getElementById("outdoor-fields");
+
+            if (locationType === "indoor") {
+              indoorFields.style.display = "block";
+              outdoorFields.style.display = "none";
+            } else {
+              indoorFields.style.display = "none";
+              outdoorFields.style.display = "block";
+            }
+
+            // Load parking space data
             loadParkingSpaceData(spaceID);
           } else {
             alert("Missing space ID. Unable to load parking space data.");
           }
         }
       });
+
+      function goBackToLots() {
+  const locationID = sessionStorage.getItem("currentLocationID");
+  const locationName = sessionStorage.getItem("currentLocationName");
+  window.location.href = `lots-and-spaces.html?locationID=${locationID}&locationName=${locationName}`;
+}
+
     </script>
   </body>
 </html>

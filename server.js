@@ -610,68 +610,6 @@ app.get("/get-spaces", (req, res) => {
   });
 });
 
-// Update parking lot spaces count
-// app.put("/update-lot-spaces/:lotID", (req, res) => {
-//   const lotID = req.params.lotID;
-
-//   db.beginTransaction((err) => {
-//     if (err) {
-//       console.error("Error starting transaction:", err);
-//       return res.status(500).json({ error: "Transaction error" });
-//     }
-
-//     // Count the number of spaces for the given lot
-//     const countSpacesQuery =
-//       "SELECT COUNT(*) as count FROM parkingspace WHERE lotID = ?";
-//     db.query(countSpacesQuery, [lotID], (err, results) => {
-//       if (err) {
-//         console.error("Error counting parking spaces:", err);
-//         return db.rollback(() => {
-//           res
-//             .status(500)
-//             .json({ error: "Database error while counting spaces" });
-//         });
-//       }
-
-//       const spacesCount = results[0].count;
-
-//       // Update the lot's spaces count
-//       const updateLotQuery = "UPDATE parkinglot SET spaces = ? WHERE lotID = ?";
-//       db.query(updateLotQuery, [spacesCount, lotID], (err, result) => {
-//         if (err) {
-//           console.error("Error updating lot spaces count:", err);
-//           return db.rollback(() => {
-//             res
-//               .status(500)
-//               .json({ error: "Database error while updating spaces count" });
-//           });
-//         }
-
-//         if (result.affectedRows === 0) {
-//           return db.rollback(() => {
-//             res.status(404).json({ error: "Lot ID not found" });
-//           });
-//         }
-
-//         // Commit the transaction
-//         db.commit((err) => {
-//           if (err) {
-//             console.error("Error committing transaction:", err);
-//             return db.rollback(() => {
-//               res.status(500).json({ error: "Transaction commit error" });
-//             });
-//           }
-
-//           res.json({
-//             success: true,
-//             message: `Spaces count updated for lotID: ${lotID}`,
-//           });
-//         });
-//       });
-//     });
-//   });
-// });
-
 // Update a parking space
 app.put("/update-space/:id", (req, res) => {
   const { id } = req.params;
