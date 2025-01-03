@@ -57,11 +57,11 @@
     <div class="header-container">
       <h3>Parking Spaces - <span id="current-lot-location"></span></h3>
       <button
-        onclick="window.location.href='add-spaces.html?lotID=' + encodeURIComponent(currentLotID) + '&locationType=' + encodeURIComponent(currentLocationType)"
-        class="add-btn"
-      >
-        <i class="fas fa-plus"></i> Add New Space
-      </button>
+  onclick="window.location.href='add-spaces.html?lotID=' + encodeURIComponent(currentLotID) + '&locationType=' + encodeURIComponent(currentLocationType) + '&locationID=' + encodeURIComponent(sessionStorage.getItem('currentLocationID')) + '&locationName=' + encodeURIComponent(sessionStorage.getItem('currentLocationName'))"
+  class="add-btn"
+>
+  <i class="fas fa-plus"></i> Add New Space
+</button>
     </div>
   
     <!-- Scrollable Table Container -->

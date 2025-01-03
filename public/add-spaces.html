@@ -119,7 +119,7 @@
             </button>
             <button
               type="button"
-              onclick="window.location.href='lots-and-spaces.html'"
+              onclick="window.location.href='lots-and-spaces.html?locationID=' + sessionStorage.getItem('currentLocationID') + '&locationName=' + sessionStorage.getItem('currentLocationName')"
               class="cancel-btn"
             >
               Cancel

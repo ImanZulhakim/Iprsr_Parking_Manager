@@ -1826,7 +1826,9 @@ function addParkingSpace() {
     })
     .then(() => {
       showPopup("Parking space added successfully!", "success");
-      window.location.href = `lots-and-spaces.html?lotID=${lotID}`;
+      setTimeout(() => {
+        window.location.href = `lots-and-spaces.html?lotID=${lotID}&locationID=${sessionStorage.getItem('currentLocationID')}&locationName=${sessionStorage.getItem('currentLocationName')}`;
+      }, 2000);
     })
     .catch((error) => {
       console.error("Error creating parking space:", error);
