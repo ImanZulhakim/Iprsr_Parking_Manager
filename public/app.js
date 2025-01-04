@@ -12,6 +12,7 @@ let currentSpaceCoordinates = null;
 let editSpaceMap = null;
 let editSpaceMarker = null;
 let currentLocationType = null;
+let drawnBoundary = null; // Global variable to store the currently drawn boundary
 
 // Document ready
 $(document).ready(function () {
@@ -250,18 +251,6 @@ function initIndoorMap() {
   };
   L.control.layers(baseMaps).addTo(currentMap);
 
-  // Add click handler for marker placement
-  currentMap.on("click", function (e) {
-    if (currentMarker) {
-      currentMap.removeLayer(currentMarker);
-    }
-    currentMarker = L.marker(e.latlng).addTo(currentMap);
-    currentSpaceCoordinates = {
-      lat: e.latlng.lat.toFixed(6),
-      lng: e.latlng.lng.toFixed(6),
-    };
-  });
-
   // Add geocoder for location search
   const geocoder = L.Control.Geocoder.nominatim({
     geocodingQueryParams: {
@@ -276,9 +265,156 @@ function initIndoorMap() {
     defaultMarkGeocode: false,
     placeholder: "Search for location...",
     collapsed: false,
-  }).addTo(currentMap);
+  })
+  .on("markgeocode", function (e) {
+    const latlng = e.geocode.center;
+    currentMap.setView(latlng, 17);
+
+    // Extract address details
+    const address = e.geocode.properties.address;
+    const state = address.state || "";
+    const district = address.county || address.city || "";
+
+    // Create popup content with address details
+    const popupContent = `
+      <strong>${address.name || ""}</strong><br>
+      ${district}<br>
+      ${state}
+    `;
+
+    // Clear existing markers
+    if (currentMarker) {
+      currentMap.removeLayer(currentMarker);
+    }
+
+    // Add marker with address popup
+    currentMarker = L.marker(latlng).addTo(currentMap);
+    currentMarker.bindPopup(popupContent).openPopup();
+    
+    // Update the space coordinates
+    currentSpaceCoordinates = {
+      lat: latlng.lat.toFixed(6),
+      lng: latlng.lng.toFixed(6)
+    };
+  })
+  .addTo(currentMap);
+
+  // Add click handler for marker placement
+  currentMap.on("click", function (e) {
+    if (currentMarker) {
+      currentMap.removeLayer(currentMarker);
+    }
+    currentMarker = L.marker(e.latlng).addTo(currentMap);
+    currentSpaceCoordinates = {
+      lat: e.latlng.lat.toFixed(6),
+      lng: e.latlng.lng.toFixed(6),
+    };
+  });
 
   return currentMap;
+}
+
+// Add this new function
+function editIndoorLotBoundary(lotID) {
+  fetch(`/get-lot/${lotID}`)
+    .then(response => response.json())
+    .then(lot => {
+      if (currentMap) {
+        currentMap.remove();
+      }
+
+      currentMap = L.map("edit-boundary-map").setView([4.2105, 101.9758], 7);
+
+      // Add satellite layer
+      const satelliteTile = L.tileLayer(
+        "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+        {
+          subdomains: ["mt0", "mt1", "mt2", "mt3"],
+          maxZoom: 22,
+        }
+      ).addTo(currentMap);
+
+      // Add streets layer
+      const streets = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          maxZoom: 22,
+        }
+      );
+
+      // Add layer control
+      const baseMaps = {
+        Satellite: satelliteTile,
+        Streets: streets,
+      };
+      L.control.layers(baseMaps).addTo(currentMap);
+
+      // Add geocoder for location search
+      const geocoder = L.Control.Geocoder.nominatim({
+        geocodingQueryParams: {
+          countrycodes: "my",
+          addressdetails: 1,
+          format: "json",
+        },
+      });
+
+      L.Control.geocoder({
+        geocoder: geocoder,
+        defaultMarkGeocode: false,
+        placeholder: "Search for location...",
+        collapsed: false,
+      })
+      .on("markgeocode", function (e) {
+        const latlng = e.geocode.center;
+        currentMap.setView(latlng, 17);
+        updateMarkerPosition(latlng);
+      })
+      .addTo(currentMap);
+
+      // If lot has existing coordinates, show the marker
+      if (lot.coordinates) {
+        const [lat, lng] = lot.coordinates.split(',').map(coord => parseFloat(coord.trim()));
+        if (!isNaN(lat) && !isNaN(lng)) {
+          currentMap.setView([lat, lng], 17);
+          updateMarkerPosition([lat, lng]);
+        }
+      }
+
+      // Add click handler for marker placement
+      currentMap.on("click", function (e) {
+        updateMarkerPosition(e.latlng);
+      });
+    })
+    .catch(error => {
+      console.error("Error loading lot details:", error);
+      showPopup("Error loading lot details", "error");
+    });
+}
+
+function updateMarkerPosition(position) {
+  if (currentMarker) {
+    currentMap.removeLayer(currentMarker);
+  }
+
+  // Handle both array format [lat, lng] and LatLng object format
+  let lat, lng;
+  if (Array.isArray(position)) {
+    [lat, lng] = position;
+  } else {
+    // Assume it's a LatLng object from a map click event
+    lat = position.lat;
+    lng = position.lng;
+  }
+
+  // Create the marker position
+  const markerPosition = L.latLng(lat, lng);
+  currentMarker = L.marker(markerPosition).addTo(currentMap);
+  
+  // Update coordinates
+  currentSpaceCoordinates = {
+    lat: markerPosition.lat.toFixed(6),
+    lng: markerPosition.lng.toFixed(6)
+  };
 }
 
 // Save indoor parking lot
@@ -359,6 +495,9 @@ function saveOutdoorParkingLot() {
   const locationName = document.getElementById("lotName").value;
   const locationID = document.getElementById("hiddenLocationID").value;
 
+  // Ensure centerCoordinates is an array
+  const centerCoordinates = [centerLat, centerLng];
+
   // First save the lot details
   fetch("/add-lot", {
     method: "POST",
@@ -368,7 +507,7 @@ function saveOutdoorParkingLot() {
       lot_name: locationName,
       locationID,
       locationType: "outdoor",
-      coordinates: `${centerLat},${centerLng}`,
+      coordinates: centerCoordinates.join(","),
     }),
   })
     .then((response) => {
@@ -382,7 +521,7 @@ function saveOutdoorParkingLot() {
         body: JSON.stringify({
           lotID,
           coordinates,
-          centerCoordinates: `${centerLat},${centerLng}`,
+          centerCoordinates, // Send as an array
         }),
       });
     })
@@ -840,9 +979,89 @@ function toggleReserved(lotID, checkbox) {
     });
 }
 
+function initEditIndoorLot(lotID) {
+  fetch(`/get-lot/${lotID}`)
+    .then(response => response.json())
+    .then(lot => {
+      document.getElementById('lotName').value = lot.lot_name || '';
+      editIndoorLotBoundary(lotID);
+    })
+    .catch(error => {
+      console.error("Error loading lot details:", error);
+      showPopup("Error loading lot details", "error");
+    });
+}
+
+function updateIndoorLotLocation() {
+  const lotID = document.getElementById('lotID').value;
+  const lotName = document.getElementById('lotName').value;
+
+  if (!lotName.trim()) {
+    showPopup("Please enter a lot name", "error");
+    return;
+  }
+
+  if (!currentMarker) {
+    showPopup("Please place a marker on the map", "error");
+    return;
+  }
+
+  const coordinates = `${currentMarker.getLatLng().lat.toFixed(6)},${currentMarker.getLatLng().lng.toFixed(6)}`;
+
+  showConfirm("Are you sure you want to update this indoor parking lot?").then((confirmed) => {
+    if (confirmed) {
+      fetch("/edit-indoor-lot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lotID,
+          lot_name: lotName,
+          coordinates
+        }),
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          showPopup("Indoor parking lot updated successfully!", "success");
+          setTimeout(() => {
+            const locationID = sessionStorage.getItem("currentLocationID");
+            const locationName = sessionStorage.getItem("currentLocationName");
+            window.location.href = `lots-and-spaces.html?locationID=${locationID}&locationName=${locationName}`;
+          }, 2000);
+        } else {
+          throw new Error(data.error || "Failed to update location");
+        }
+      })
+      .catch((error) => {
+        console.error("Error updating lot:", error);
+        showPopup(error.message || "Error updating lot. Please try again.", "error");
+      });
+    }
+  });
+}
+
 // Add this new function
 function editLotBoundary(lotID) {
-  window.location.href = `edit-lot-boundary.html?lotID=${lotID}`;
+  fetch(`/get-lot/${lotID}`)
+    .then(response => response.json())
+    .then(lot => {
+      if (lot.locationType === 'indoor') {
+        window.location.href = `edit-indoor-lot.html?lotID=${lotID}`;
+      } else {
+        window.location.href = `edit-lot-boundary.html?lotID=${lotID}`;
+      }
+    })
+    .catch(error => {
+      console.error("Error checking lot type:", error);
+      showPopup("Error checking lot type", "error");
+    });
 }
 
 // Initialize edit boundary page
@@ -917,45 +1136,18 @@ function initEditBoundaryPage(lotID) {
             }).addTo(drawnItems);
             currentMap.fitBounds(polygon.getBounds());
           }
+        })
+        .catch((error) => {
+          console.error("Error loading existing boundary:", error);
+          showPopup("Error loading existing boundary. Please try again.", "error");
         });
 
       // Handle new boundary drawing
       currentMap.on(L.Draw.Event.CREATED, function (event) {
         drawnItems.clearLayers();
         const layer = event.layer;
-        const coordinates = layer
-          .getLatLngs()[0]
-          .map((coord) => [coord.lat, coord.lng]);
-
-        // Calculate center point
-        const centerLat =
-          coordinates.reduce((sum, coord) => sum + coord[0], 0) /
-          coordinates.length;
-        const centerLng =
-          coordinates.reduce((sum, coord) => sum + coord[1], 0) /
-          coordinates.length;
-
-        // Save updated boundary
-        fetch("/save-lot", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            lotID,
-            coordinates,
-            centerCoordinates: [centerLat, centerLng],
-          }),
-        })
-          .then(() => {
-            showPopup("Parking lot boundary updated successfully!", "success");
-            drawnItems.addLayer(layer);
-            setTimeout(() => {
-              window.location.href = "lots-and-spaces?locationID=' + document.getElementById('hiddenLocationID').value + '&locationName=' + document.getElementById('locationNameDisplay').textContent.html";
-            }, 2000);
-          })
-          .catch((err) => {
-            console.error("Error saving boundary:", err);
-            showPopup("Error saving boundary. Please try again.", "error");
-          });
+        drawnBoundary = layer; // Store the drawn boundary
+        drawnItems.addLayer(layer);
       });
     })
     .catch((error) => {
@@ -986,8 +1178,7 @@ function viewSpaces(lotID) {
       createPaginationControls();
 
       // Show containers
-      document.querySelector("#parking-spaces-container").style.display =
-        "block";
+      document.querySelector("#parking-spaces-container").style.display = "block";
 
       // Fetch the lot details to get the locationType
       fetch(`/get-lot/${lotID}`)
@@ -997,141 +1188,83 @@ function viewSpaces(lotID) {
           currentLocationType = lot.locationType;
 
           // Update the title dynamically
-          document.getElementById("current-lot-location").textContent =
-            lot.lot_name;
+          document.getElementById("current-lot-location").textContent = lot.lot_name;
 
           // Toggle map container visibility based on locationType
           const mapContainer = document.getElementById("view-map-container");
-          if (currentLocationType === "outdoor") {
-            mapContainer.style.display = "block"; // Show the map for outdoor lots
-          
-            currentMap.whenReady(() => {
-              currentMap.invalidateSize(); // Recalculate the map size
-            });
-            
-          } else {
-            mapContainer.style.display = "none"; // Hide the map for indoor lots
-          }
-          
-          
-        })
-        .catch((err) => {
-          console.error("Error fetching lot details:", err);
-          showPopup("Failed to load lot details.", "error");
-        });
+          if (currentLocationType === "outdoor" || currentLocationType === "indoor") {
+            mapContainer.style.display = "block"; // Show the map for both indoor and outdoor lots
 
-      // Initialize map
-      if (currentMap) {
-        currentMap.off();
-        currentMap.remove();
-      }
+            // Initialize or update the map
+            if (currentMap) {
+              currentMap.off();
+              currentMap.remove();
+            }
 
-      // Create map with satellite view
-      currentMap = L.map("view-map-container").setView([4.2105, 108.9758], 6);
-      const satelliteTile = L.tileLayer(
-        "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-        {
-          subdomains: ["mt0", "mt1", "mt2", "mt3"],
-          maxZoom: 22,
-        }
-      );
-      satelliteTile.addTo(currentMap);
+            // Create map with satellite view
+            currentMap = L.map("view-map-container").setView([4.2105, 108.9758], 6);
+            const satelliteTile = L.tileLayer(
+              "https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+              {
+                subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                maxZoom: 22,
+              }
+            );
+            satelliteTile.addTo(currentMap);
 
-      // Fetch and display the lot boundary
-      fetch(`/get-lot-boundary/${lotID}`)
-        .then((response) => response.json())
-        .then((coordinates) => {
-          if (coordinates && coordinates.length > 0) {
-            const polygon = L.polygon(coordinates, {
-              color: "blue",
-              fillOpacity: 0.4,
-            }).addTo(currentMap);
+            // Handle indoor vs outdoor display
+            if (currentLocationType === "indoor") {
+              // Display indoor lot as a marker
+              const [lat, lng] = lot.coordinates.split(",").map(parseFloat);
+              if (!isNaN(lat) && !isNaN(lng)) {
+                currentMap.setView([lat, lng], 17); // Zoom in for indoor lots
+                const marker = L.marker([lat, lng]).addTo(currentMap);
+                marker.bindPopup(`<b>${lot.lot_name}</b><br>Indoor Parking Lot`).openPopup();
+              }
+            } else if (currentLocationType === "outdoor") {
+              // Display outdoor lot as a boundary polygon
+              fetch(`/get-lot-boundary/${lotID}`)
+                .then((response) => response.json())
+                .then((coordinates) => {
+                  if (coordinates && coordinates.length > 0) {
+                    const polygon = L.polygon(coordinates, {
+                      color: "blue",
+                      fillOpacity: 0.4,
+                    }).addTo(currentMap);
 
-            // Fit map to boundary
-            currentMap.fitBounds(polygon.getBounds());
+                    // Fit map to boundary
+                    currentMap.fitBounds(polygon.getBounds());
+                  }
+                })
+                .catch((err) => {
+                  console.error("Error fetching lot boundary:", err);
+                });
+            }
 
             // Add markers for each parking space
             spaces.forEach((space) => {
-              // Check if space has coordinates stored as a string "lat,lng"
               if (space.coordinates) {
                 try {
-                  const [lat, lng] = space.coordinates
-                    .split(",")
-                    .map((coord) => parseFloat(coord.trim()));
-
+                  const [lat, lng] = space.coordinates.split(",").map(parseFloat);
                   if (!isNaN(lat) && !isNaN(lng)) {
-                    // Determine marker color based on space type and availability
-                    let markerColor = "#9E9E9E"; // Default gray for regular spaces
-
-                    if (!space.isAvailable) {
-                      markerColor = "#FF5252"; // redAccent for occupied
-                    } else if (space.parkingType==='Special') {
-                      markerColor = "#2196F3"; // blueAccent for special
-                    } else if (space.parkingType==='Family') {
-                      markerColor = "#E040FB"; // purpleAccent for family
-                    } else if (space.parkingType==='EV') {
-                      markerColor = "#1DE9B6"; // tealAccent for EV
-                    } else if (space.parkingType==='Premium') {
-                      markerColor = "#FFD54F"; // yellow/gold for premium
-                    }
-                    // Create custom marker icon with Google Maps style
-                    const markerIcon = L.divIcon({
-                      className: "custom-marker",
-                      html: `
-                        <div style="
-                          background-color: ${markerColor};
-                          width: 24px;
-                          height: 24px;
-                          border-radius: 50%;
-                          border: 2px solid white;
-                          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                          position: relative;
-                        ">
-                          <div style="
-                            position: absolute;
-                            bottom: -8px;
-                            left: 50%;
-                            transform: translateX(-50%);
-                            width: 2px;
-                            height: 8px;
-                            background-color: ${markerColor};
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                          "></div>
-                        </div>
-                      `,
-                      iconSize: [24, 24],
-                      iconAnchor: [12, 24],
-                      popupAnchor: [0, -24],
-                    });
-
-                    const marker = L.marker([lat, lng], {
-                      icon: markerIcon,
-                    }).addTo(currentMap);
+                    const markerColor = determineMarkerColor(space);
+                    const markerIcon = createCustomMarker(markerColor);
+                    const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(currentMap);
 
                     // Create popup content
                     const popupContent = `
                       <div class="space-popup">
                         <b>Space ID:</b> ${space.parkingSpaceID}<br>
                         <b>Type:</b> ${space.parkingType}<br>
-                        <b>Available:</b> ${
-                          space.isAvailable ? "Yes" : "No"
-                        }<br>
+                        <b>Available:</b> ${space.isAvailable ? "Yes" : "No"}<br>
                         <b>Features:</b><br>
                         ${space.isNearest ? "• Nearest<br>" : ""}
                         ${space.isCovered ? "• Covered<br>" : ""}
-                        ${
-                          space.isWheelchairAccessible
-                            ? "• Wheelchair Accessible<br>"
-                            : ""
-                        }
+                        ${space.isWheelchairAccessible ? "• Wheelchair Accessible<br>" : ""}
                         ${space.hasLargeSpace ? "• Large Space<br>" : ""}
                         ${space.isWellLitArea ? "• Well Lit<br>" : ""}
                         ${space.hasEVCharging ? "• EV Charging<br>" : ""}
-                        ${
-                          space.isFamilyParkingArea
-                            ? "• Family Parking<br>"
-                            : ""
-                        }
+                        ${space.isFamilyParkingArea ? "• Family Parking<br>" : ""}
                         ${space.isPremium ? "• Premium<br>" : ""}
                       </div>
                     `;
@@ -1139,18 +1272,17 @@ function viewSpaces(lotID) {
                     marker.bindPopup(popupContent);
                   }
                 } catch (error) {
-                  console.error(
-                    "Error creating marker for space:",
-                    space.parkingSpaceID,
-                    error
-                  );
+                  console.error("Error creating marker for space:", space.parkingSpaceID, error);
                 }
               }
             });
+          } else {
+            mapContainer.style.display = "none"; // Hide the map for unknown types
           }
         })
         .catch((err) => {
-          console.error("Error fetching lot boundary:", err);
+          console.error("Error fetching lot details:", err);
+          showPopup("Failed to load lot details.", "error");
         });
     })
     .catch((err) => {
@@ -1693,6 +1825,37 @@ function showConfirmDialog(message) {
   });
 }
 
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    const popup = document.createElement("div");
+    popup.className = "confirm-popup";
+    popup.innerHTML = `
+      <div class="confirm-content">
+        <p>${message}</p>
+        <div class="confirm-buttons">
+          <button class="confirm-cancel">Cancel</button>
+          <button class="confirm-okay">Confirm</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    const cancelBtn = popup.querySelector(".confirm-cancel");
+    const confirmBtn = popup.querySelector(".confirm-okay");
+
+    cancelBtn.addEventListener("click", () => {
+      popup.remove();
+      resolve(false);
+    });
+
+    confirmBtn.addEventListener("click", () => {
+      popup.remove();
+      resolve(true);
+    });
+  });
+}
+
 // Determine marker color based on space availability and preferences
 function determineMarkerColor(space) {
   if (!space.isAvailable) return "#FF5252";
@@ -1857,67 +2020,21 @@ async function deleteParkingSpace(spaceID) {
       })
       .then((data) => {
         showPopup("Parking space deleted successfully", "success");
-        // Refresh the current page to update the table
+        
+        // Get locationID and locationName from sessionStorage
+        const locationID = sessionStorage.getItem("currentLocationID");
+        const locationName = sessionStorage.getItem("currentLocationName");
+        
+        // Refresh the page with location parameters
         setTimeout(() => {
-          window.location.reload(); // Refresh the page
-        }, 1500); // 1.5 seconds delay (adjust as needed)
+          window.location.href = `lots-and-spaces.html?locationID=${locationID}&locationName=${locationName}`;
+        }, 1500);
       })
       .catch((error) => {
         console.error("Error:", error);
         showPopup("Failed to delete parking space: " + error.message, "error");
       });
   }
-}
-
-// View lot on map
-function viewLotOnMap(lotID) {
-  console.log(`Displaying map for lotID: ${lotID}`);
-
-  const mapContainer = document.getElementById("view-map-container");
-
-  if (!mapContainer) {
-    console.error("Map container not found!");
-    return;
-  }
-
-  if (currentMap) {
-    currentMap.off();
-    currentMap.remove();
-  }
-
-  currentMap = L.map("map").setView([4.2105, 108.9758], 6);
-  const satelliteTile = L.tileLayer(
-    "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-    {
-      subdomains: ["mt0", "mt1", "mt2", "mt3"],
-      maxZoom: 22,
-    }
-  );
-  satelliteTile.addTo(currentMap);
-
-  // Fetch and display the boundary
-  fetch(`/get-lot-boundary/${lotID}`)
-    .then((response) => {
-      if (!response.ok) throw new Error("Failed to fetch lot boundary");
-      return response.json();
-    })
-    .then((coordinates) => {
-      if (!coordinates || coordinates.length === 0) {
-        showPopup("No boundary data found for this lot", "error");
-        return;
-      }
-
-      const polygon = L.polygon(coordinates, {
-        color: "blue",
-        fillOpacity: 0.4,
-      }).addTo(currentMap);
-
-      currentMap.fitBounds(polygon.getBounds());
-    })
-    .catch((err) => {
-      console.error("Error fetching lot boundary:", err);
-      showPopup("Failed to load lot boundary.", "error");
-    });
 }
 
 // Mark space on map
@@ -2257,3 +2374,78 @@ document.getElementById("parkingType")?.addEventListener("change", function () {
       break;
   }
 });
+
+
+function updateLotBoundary() {
+  const lotID = document.getElementById("lotID").value;
+  const lotName = document.getElementById("lotName").value;
+  
+  // Add debug logging
+  console.log("Sending update request:", {
+      lotID,
+      lot_name: lotName
+  });
+
+  if (!lotName.trim()) {
+      showPopup("Please enter a lot name", "error");
+      return;
+  }
+
+  // Get the drawn boundary if exists
+  let coordinates;
+  let centerCoordinates;
+  
+  if (drawnItems.getLayers().length > 0) {
+      const layer = drawnItems.getLayers()[0];
+      coordinates = layer.getLatLngs()[0].map(coord => [coord.lat, coord.lng]);
+      const bounds = layer.getBounds();
+      const center = bounds.getCenter();
+      centerCoordinates = [center.lat, center.lng];
+  } else {
+      showPopup("Please draw a boundary first", "error");
+      return;
+  }
+
+  // Show confirmation dialog
+  showConfirm("Are you sure you want to update this parking lot?").then((confirmed) => {
+      if (confirmed) {
+        console.log("Sending update request:", {
+          lotID,
+          lot_name: lotName,
+          coordinates,
+          centerCoordinates
+        });
+        
+        fetch("/edit-lot-boundary", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            lotID,
+            lot_name: lotName,
+            coordinates,
+            centerCoordinates
+          }),
+        })
+          .then(response => response.json())
+          .then(data => {
+              console.log("Server response:", data);  // Add response logging
+              if (data.success) {
+                  showPopup("Parking lot updated successfully!", "success");
+                  setTimeout(() => {
+                      const locationID = sessionStorage.getItem("currentLocationID");
+                      const locationName = sessionStorage.getItem("currentLocationName");
+                      window.location.href = `lots-and-spaces.html?locationID=${locationID}&locationName=${locationName}`;
+                  }, 2000);
+              } else {
+                  throw new Error(data.error || "Failed to update boundary");
+              }
+          })
+          .catch((error) => {
+              console.error("Error updating lot:", error);
+              showPopup(error.message || "Error updating lot. Please try again.", "error");
+          });
+      }
+  });
+}

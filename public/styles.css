@@ -364,7 +364,21 @@ h3 {
     background-color: #c5c5c5;
 }
 
+.start-drawing-btn {
+    background-color: #0074aa;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-right: 10px;
+}
 
+.start-drawing-btn:hover {
+    background-color: #c5c5c5;
+    color: black;
+}
 
 /* Error message */
 .error-message {
@@ -1020,6 +1034,11 @@ h3 {
     color: white;
 }
 
+.confirm-okay {
+    background: #00C851;
+    color: white;
+}
+
 .level-inputs {
     display: flex;
     gap: 15px;
@@ -1037,4 +1056,31 @@ h3 {
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
+  }
+  .marker-pin.indoor {
+    width: 30px;
+    height: 30px;
+    border-radius: 50% 50% 50% 0;
+    background: #00796b;
+    position: absolute;
+    transform: rotate(-45deg);
+    left: 50%;
+    top: 50%;
+    margin: -15px 0 0 -15px;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  
+  .lot-popup {
+    padding: 10px;
+    max-width: 200px;
+  }
+  
+  .lot-popup h3 {
+    margin: 0 0 10px 0;
+    color: #00796b;
+  }
+  
+  .lot-popup p {
+    margin: 5px 0;
   }

@@ -105,32 +105,38 @@ app.post("/edit-parking-space", (req, res) => {
 app.post("/add-lot-boundary", (req, res) => {
   const { lotID, coordinates, centerCoordinates } = req.body;
 
+  // Validate required data
   if (!lotID || !coordinates || !centerCoordinates) {
     return res.status(400).json({ error: "Missing required data" });
   }
 
+  // Start transaction
   db.beginTransaction((err) => {
     if (err) {
-      return res.status(500).send("Transaction error");
+      console.error("Transaction error:", err);
+      return res.status(500).json({ error: "Transaction error" });
     }
 
-    // Delete existing boundaries for this lot
-    const deleteQuery = "DELETE FROM parking_lot_boundaries WHERE lotID = ?";
-    db.query(deleteQuery, [lotID], (err) => {
-      if (err) {
-        return db.rollback(() =>
-          res.status(500).send("Error deleting boundaries")
-        );
-      }
-
-      // Update parking lot center coordinates as a string
-      const updateLotQuery =
-        "UPDATE parkinglot SET coordinates = ? WHERE lotID = ?";
-      db.query(updateLotQuery, [centerCoordinates, lotID], (err) => {
+    // Check if a boundary already exists for this lotID
+    db.query(
+      "SELECT * FROM parking_lot_boundaries WHERE lotID = ?",
+      [lotID],
+      (err, existingBoundaries) => {
         if (err) {
-          return db.rollback(() =>
-            res.status(500).send("Error updating lot center")
-          );
+          return db.rollback(() => {
+            res
+              .status(500)
+              .json({ error: "Database error", details: err.message });
+          });
+        }
+
+        if (existingBoundaries.length > 0) {
+          return db.rollback(() => {
+            res.status(409).json({
+              error:
+                "A boundary already exists for this parking lot. Use the edit function to update it.",
+            });
+          });
         }
 
         // Insert new boundary points
@@ -144,24 +150,234 @@ app.post("/add-lot-boundary", (req, res) => {
           coord[0],
           coord[1],
         ]);
+
         db.query(insertBoundaryQuery, [values], (err) => {
           if (err) {
-            return db.rollback(() =>
-              res.status(500).send("Error saving boundaries")
-            );
+            return db.rollback(() => {
+              res.status(500).json({
+                error: "Error adding boundary points",
+                details: err.message,
+              });
+            });
           }
 
-          db.commit((err) => {
-            if (err) {
-              return db.rollback(() =>
-                res.status(500).send("Transaction commit error")
-              );
+          // Update parking lot center coordinates
+          db.query(
+            "UPDATE parkinglot SET coordinates = ? WHERE lotID = ?",
+            [centerCoordinates.join(","), lotID],
+            (err) => {
+              if (err) {
+                return db.rollback(() => {
+                  res.status(500).json({
+                    error: "Error updating center coordinates",
+                    details: err.message,
+                  });
+                });
+              }
+
+              // Commit transaction
+              db.commit((err) => {
+                if (err) {
+                  return db.rollback(() => {
+                    res.status(500).json({
+                      error: "Transaction commit error",
+                      details: err.message,
+                    });
+                  });
+                }
+                res.status(200).json({
+                  success: true,
+                  message: "Parking lot boundary added successfully!",
+                });
+              });
             }
-            res.status(200).send("Parking lot boundary saved successfully!");
-          });
+          );
+        });
+      }
+    );
+  });
+});
+
+app.post("/edit-indoor-lot", (req, res) => {
+  const { lotID, lot_name, coordinates } = req.body;
+
+  // Validate required data
+  if (!lotID || !lot_name || !coordinates) {
+    console.error("Missing required data:", { lotID, lot_name, coordinates });
+    return res.status(400).json({ error: "Missing required data" });
+  }
+
+  // Update lot details in database
+  db.query(
+    "UPDATE parkinglot SET lot_name = ?, coordinates = ? WHERE lotID = ?",
+    [lot_name, coordinates, lotID],
+    (err, result) => {
+      if (err) {
+        console.error("Error updating indoor lot:", err);
+        return res.status(500).json({ error: "Database error" });
+      }
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Lot not found" });
+      }
+
+      res.json({ success: true, message: "Indoor lot updated successfully" });
+    }
+  );
+});
+
+// API to save parking lot boundary (polygon)
+app.post("/edit-lot-boundary", (req, res) => {
+  const { lotID, lot_name, coordinates, centerCoordinates } = req.body;
+
+  // Debugging: Log the received request body
+  console.log("Received request body:", {
+    lotID,
+    lot_name,
+    coordinates: coordinates ? coordinates.length : 0,
+    centerCoordinates,
+  });
+
+  // Debugging: Log the received lot_name
+  console.log("Received lot_name:", lot_name);
+
+  if (!lotID || !lot_name || !coordinates || !centerCoordinates) {
+    console.error("Missing required data:", {
+      lotID,
+      lot_name,
+      coordinates,
+      centerCoordinates,
+    });
+    return res.status(400).json({ error: "Missing required data" });
+  }
+
+  db.beginTransaction(async (err) => {
+    if (err) {
+      console.error("Transaction error:", err);
+      return res.status(500).json({ error: "Transaction error" });
+    }
+
+    try {
+      // Update lot name
+      await new Promise((resolve, reject) => {
+        console.log("Updating lot name:", { lotID, lot_name });
+        if (!lot_name) {
+          console.error("Lot name is undefined or empty");
+          reject(new Error("Lot name is required"));
+          return;
+        }
+
+        db.query(
+          "UPDATE parkinglot SET lot_name = ? WHERE lotID = ?",
+          [lot_name, lotID],
+          (err, result) => {
+            if (err) {
+              console.error("Error updating lot name:", err);
+              reject(err);
+              return;
+            }
+            if (result.affectedRows === 0) {
+              console.error("No rows were updated for lot name");
+              reject(new Error(`No lot found with ID ${lotID}`));
+              return;
+            }
+            console.log("Update result:", result);
+            console.log(
+              `Updated lot_name to '${lot_name}' for lotID '${lotID}'`
+            );
+            resolve(result);
+          }
+        );
+      });
+      // Delete existing boundaries
+      await new Promise((resolve, reject) => {
+        console.log("Deleting existing boundaries for lotID:", lotID);
+        db.query(
+          "DELETE FROM parking_lot_boundaries WHERE lotID = ?",
+          [lotID],
+          (err) => {
+            if (err) {
+              console.error("Error deleting existing boundaries:", err);
+              reject(err);
+            }
+            console.log(
+              "Successfully deleted existing boundaries for lotID:",
+              lotID
+            );
+            resolve();
+          }
+        );
+      });
+
+      // Update center coordinates
+      await new Promise((resolve, reject) => {
+        console.log("Updating center coordinates for lotID:", lotID);
+        db.query(
+          "UPDATE parkinglot SET coordinates = ? WHERE lotID = ?",
+          [centerCoordinates.join(","), lotID],
+          (err) => {
+            if (err) {
+              console.error("Error updating center coordinates:", err);
+              reject(err);
+            }
+            console.log(
+              "Successfully updated center coordinates for lotID:",
+              lotID
+            );
+            resolve();
+          }
+        );
+      });
+
+      // Insert new boundary points
+      const insertBoundaryQuery = `
+        INSERT INTO parking_lot_boundaries (lotID, point_order, latitude, longitude)
+        VALUES ?
+      `;
+      const values = coordinates.map((coord, index) => [
+        lotID,
+        index + 1,
+        coord[0],
+        coord[1],
+      ]);
+
+      await new Promise((resolve, reject) => {
+        console.log("Inserting new boundary points for lotID:", lotID);
+        db.query(insertBoundaryQuery, [values], (err) => {
+          if (err) {
+            console.error("Error inserting boundary points:", err);
+            reject(err);
+          }
+          console.log(
+            "Successfully inserted new boundary points for lotID:",
+            lotID
+          );
+          resolve();
         });
       });
-    });
+
+      db.commit((err) => {
+        if (err) {
+          console.error("Transaction commit error:", err);
+          return db.rollback(() => {
+            res.status(500).json({ error: "Transaction commit error" });
+          });
+        }
+        console.log("Transaction committed successfully for lotID:", lotID);
+        res.status(200).json({
+          success: true,
+          message: "Parking lot updated successfully!",
+        });
+      });
+    } catch (error) {
+      console.error("Error in boundary update:", error);
+      return db.rollback(() => {
+        res.status(500).json({
+          error: "Error updating boundary",
+          details: error.message,
+        });
+      });
+    }
   });
 });
 
@@ -170,31 +386,48 @@ app.post("/add-lot", (req, res) => {
   const { lotID, lot_name, locationID, locationType, coordinates } = req.body;
 
   if (!lotID || !lot_name || !locationID || !locationType) {
-    return res.status(400).json({ message: "Missing required fields" });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
-  // Insert into parkinglot table
-  const query =
-    "INSERT INTO parkinglot (lotID, lot_name, locationID, locationType, coordinates) VALUES (?, ?, ?, ?, ?)";
+  // Check if lot exists first
   db.query(
-    query,
-    [lotID, lot_name, locationID, locationType, coordinates],
-    (err, result) => {
+    "SELECT lotID FROM parkinglot WHERE lotID = ?",
+    [lotID],
+    (err, results) => {
       if (err) {
-        console.error("Error creating parking lot:", err);
-
-        // Handle duplicate entry error
-        if (err.code === "ER_DUP_ENTRY") {
-          return res.status(409).json({
-            message: `Duplicate entry: Lot ID '${lotID}' already exists.`,
-          });
-        }
-
+        console.error("Error checking lot existence:", err);
         return res
           .status(500)
-          .json({ message: "Error creating parking lot", error: err.message });
+          .json({ error: "Database error", details: err.message });
       }
-      res.json({ message: `Parking lot ${lotID} created successfully!` });
+
+      if (results.length > 0) {
+        return res.status(409).json({
+          error: "Duplicate entry",
+          message: `Parking lot with ID '${lotID}' already exists.`,
+        });
+      }
+
+      // Insert new lot
+      const query =
+        "INSERT INTO parkinglot (lotID, lot_name, locationID, locationType, coordinates) VALUES (?, ?, ?, ?, ?)";
+      db.query(
+        query,
+        [lotID, lot_name, locationID, locationType, coordinates],
+        (err) => {
+          if (err) {
+            console.error("Error creating parking lot:", err);
+            return res.status(500).json({
+              error: "Database error",
+              details: err.message,
+            });
+          }
+          res.status(201).json({
+            success: true,
+            message: `Parking lot ${lotID} created successfully!`,
+          });
+        }
+      );
     }
   );
 });

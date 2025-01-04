@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPRSR Management - Edit Indoor Lot Location</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <div class="main-content">
+        <h2>Edit Indoor Parking Lot Location</h2>
+        <div class="lot-form">
+            <div class="form-group">
+                <label for="lotID">Lot ID:</label>
+                <input type="text" id="lotID" readonly>
+            </div>
+            <div class="form-group">
+                <label for="lotName">Lot Name:</label>
+                <input type="text" id="lotName">
+            </div>
+
+            <div id="edit-boundary-map" style="height: 500px;"></div>
+            <p class="instruction" style="color: grey; font-style: italic; margin-bottom: 20px">
+                Click on the map to place a marker for the indoor parking lot location, or use the search box to find a specific address.
+            </p>
+            <div class="form-actions">
+                <button type="button" onclick="updateIndoorLotLocation()" class="action-btn submit-btn">
+                    <i class="fas fa-save"></i> Update
+                </button>
+                <button type="button" onclick="cancelEdit()" class="action-btn cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script src="app.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#navbar-placeholder").load("navbar.html");
+            const urlParams = new URLSearchParams(window.location.search);
+            const lotID = urlParams.get('lotID');
+            if (lotID) {
+                document.getElementById('lotID').value = lotID;
+                initEditIndoorLot(lotID);
+            }
+        });
+
+        async function cancelEdit() {
+            const confirmed = await showConfirmDialog(
+                "Are you sure you want to cancel? Any unsaved changes will be lost."
+            );
+            if (confirmed) {
+                const locationID = sessionStorage.getItem("currentLocationID");
+                const locationName = sessionStorage.getItem("currentLocationName");
+                window.location.href = `lots-and-spaces.html?locationID=${locationID}&locationName=${locationName}`;
+            }
+        }
+
+    </script>
+</body>
+</html>

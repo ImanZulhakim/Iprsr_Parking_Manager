@@ -5,8 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IPRSR Management - Edit Parking Space</title>
     <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
   </head>
   <body id="edit-space-page">
     <div id="navbar-placeholder"></div>
@@ -44,35 +50,58 @@
         </div>
 
         <div class="checkbox-group-container">
-          <label for="parkingPreferences" class="checkbox-group-label">Parking Preferences</label>
+          <label for="parkingPreferences" class="checkbox-group-label"
+            >Parking Preferences</label
+          >
           <div class="checkbox-group">
             <label><input type="checkbox" name="isNearest" /> Nearest</label>
             <label><input type="checkbox" name="isCovered" /> Covered</label>
-            <label><input type="checkbox" name="isWheelchairAccessible" /> Wheelchair Accessible</label>
-            <label><input type="checkbox" name="hasLargeSpace" /> Large Space</label>
-            <label><input type="checkbox" name="isWellLitArea" /> Well Lit Area</label>
-            <label><input type="checkbox" name="hasEVCharging" /> EV Charging</label>
-            <label><input type="checkbox" name="isFamilyParkingArea" /> Family Parking</label>
+            <label
+              ><input type="checkbox" name="isWheelchairAccessible" />
+              Wheelchair Accessible</label
+            >
+            <label
+              ><input type="checkbox" name="hasLargeSpace" /> Large Space</label
+            >
+            <label
+              ><input type="checkbox" name="isWellLitArea" /> Well Lit
+              Area</label
+            >
+            <label
+              ><input type="checkbox" name="hasEVCharging" /> EV Charging</label
+            >
+            <label
+              ><input type="checkbox" name="isFamilyParkingArea" /> Family
+              Parking</label
+            >
             <label><input type="checkbox" name="isPremium" /> Premium</label>
-            <label><input type="checkbox" name="isAvailable" /> Available</label>
+            <label
+              ><input type="checkbox" name="isAvailable" /> Available</label
+            >
           </div>
         </div>
 
-       <!-- Indoor location fields -->
-<div id="indoor-fields" class="form-row" style="display: none;">
-  <label>Floor/Level:</label>
-  <div class="level-inputs">
-    <div class="level-type-wrapper">
-      <select id="levelType" name="levelType" required>
-        <option value="FLOOR">Floor</option>
-        <option value="LEVEL">Level</option>
-      </select>
-    </div>
-    <div class="level-number-wrapper">
-      <input type="number" id="levelNumber" name="levelNumber" min="-5" max="100" required />
-    </div>
-  </div>
-</div>
+        <!-- Indoor location fields -->
+        <div id="indoor-fields" class="form-row" style="display: none">
+          <label>Floor/Level:</label>
+          <div class="level-inputs">
+            <div class="level-type-wrapper">
+              <select id="levelType" name="levelType">
+                <option value="FLOOR">Floor</option>
+                <option value="LEVEL">Level</option>
+              </select>
+            </div>
+            <div class="level-number-wrapper">
+              <input
+                type="number"
+                id="levelNumber"
+                name="levelNumber"
+                min="-5"
+                max="100"
+              />
+            </div>
+          </div>
+        </div>
 
         <!-- Outdoor location map -->
         <div id="outdoor-fields" class="form-row">
@@ -83,7 +112,9 @@
 
         <div class="form-actions">
           <button type="submit" class="submit-btn">Save Changes</button>
-          <button type="button" onclick="goBackToLots()" class="cancel-btn">Cancel</button>
+          <button type="button" onclick="goBackToLots()" class="cancel-btn">
+            Cancel
+          </button>
         </div>
       </form>
     </div>
@@ -104,13 +135,26 @@
             // Show/hide fields based on location type
             const indoorFields = document.getElementById("indoor-fields");
             const outdoorFields = document.getElementById("outdoor-fields");
+            const levelType = document.getElementById("levelType");
+            const levelNumber = document.getElementById("levelNumber");
+            const coordinates = document.getElementById("coordinates");
 
             if (locationType === "indoor") {
               indoorFields.style.display = "block";
               outdoorFields.style.display = "none";
+              // Add required attribute for indoor fields
+              levelType.setAttribute("required", "true");
+              levelNumber.setAttribute("required", "true");
+              // Remove required for outdoor fields
+              coordinates.removeAttribute("required");
             } else {
               indoorFields.style.display = "none";
               outdoorFields.style.display = "block";
+              // Remove required for indoor fields
+              levelType.removeAttribute("required");
+              levelNumber.removeAttribute("required");
+              // Add required for outdoor fields
+              coordinates.setAttribute("required", "true");
             }
 
             // Load parking space data
@@ -122,11 +166,10 @@
       });
 
       function goBackToLots() {
-  const locationID = sessionStorage.getItem("currentLocationID");
-  const locationName = sessionStorage.getItem("currentLocationName");
-  window.location.href = `lots-and-spaces.html?locationID=${locationID}&locationName=${locationName}`;
-}
-
+        const locationID = sessionStorage.getItem("currentLocationID");
+        const locationName = sessionStorage.getItem("currentLocationName");
+        window.location.href = `lots-and-spaces.html?locationID=${locationID}&locationName=${locationName}`;
+      }
     </script>
   </body>
 </html>
